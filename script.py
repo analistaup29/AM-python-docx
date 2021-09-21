@@ -7,20 +7,27 @@ Created on Tue Sep 21 15:54:48 2021
 # Importar librerías ----------------------------------------------------------
 
 import docx
-from docx import Document
-from docx.shared import Cm
 import pandas as pd
 from datetime import datetime
-import os
 from pyprojroot import here
 
-# Acciones --------------------------------------------------------------------
-
-# Creación del documento en base al template
-document = docx.Document(here() / "input/formato.docx")
+# Opciones --------------------------------------------------------------------
 
 #Reemplazar con un loop
 region = "Cajamarca"
+
+
+
+# Datasets --------------------------------------------------------------------
+
+
+
+
+# Contenido -------------------------------------------------------------------
+
+
+# Creación del documento en base al template
+document = docx.Document(here() / "input/formato.docx")
 
 #Título
 title=document.add_heading('AM Temas Presupuestales', 0)
@@ -111,7 +118,6 @@ pa7.add_run(', lo que equivale al ')
 pa7.add_run('XXX') #Reemplazar 
 pa7.add_run(' respecto al costo de los recursos.') 
 
-
 # Tablas1
 titu_tabla1= document.add_heading('Ejecución de intervenciones en ', level=1)
 titu_tabla1.add_run(region)
@@ -130,6 +136,5 @@ for i in range(data.shape[0]):
         
 document.add_heading('5. Condiciones para la reapertura de IIEE: Mascarillas y protectores faciales', level=1)
 
-
-document.save(here() / "output/AM.docx")        
-        
+# Guardar output
+document.save(here() / "output/AM.docx")
