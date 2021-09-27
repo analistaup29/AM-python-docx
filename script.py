@@ -5,7 +5,6 @@ Created on Tue Sep 21 15:54:48 2021
 """
 
 # Importar librerías ----------------------------------------------------------
-
 import docx
 import pandas as pd
 from datetime import datetime
@@ -14,32 +13,47 @@ from janitor import clean_names # pip install pyjanitor
 
 # Opciones --------------------------------------------------------------------
 
-# Formato tablas
+# Formato de tablas
 pd.options.display.float_format = '${:,.0f}'.format
 
+# Transformación de Datasets --------------------------------------------------
 
-# Datasets --------------------------------------------------------------------
+# A) Base de disponibilidad
+## Cargamos base de disponibilidad
+data_intervenciones = pd.read_excel(here() / "input/Disponibilidad_Presupuestal_20210923interv.xlsx")
+data_intervenciones = clean_names(data_intervenciones) # Normalizamos nombres
 
-# Data
-data_intervenciones = pd.read_excel(here() / "input/equipo_data/Disponibilidad_Presupuestal_20210923interv.xlsx")
-data_intervenciones = clean_names(data_intervenciones)
-
+# Mantenemos variables de interés (PIM, DEVENGADO, COMPROMETIDO CERTIFICADO) y 
+# colapsamos a nivel de Region, Intervencion Pedagogica y Cas-No-Cas
 tabla_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", "pim_reporte_siaf_20210923", "presupuesto_certificado_reporte_siaf_20210923", "comprometido_anual_reporte_siaf_20210923", "presupuesto_devengado_reporte_siaf_20210923"]]. \
    groupby(by = ["region", "cas_no_cas", "intervencion_pedagogica"] , as_index=False).sum()
 
+# Eliminamos filas de "No hay Intervenciones pedagogicas"
 tabla_intervenciones = tabla_intervenciones[tabla_intervenciones['intervencion_pedagogica'] != "No hay Intervenciones Pedagógicas"]
 
 
-# Intervenciones pedagogicas
-numero_intervenciones = "8"
+# (PENDIENTE) FOR LOOP de número de intervenciones pedagógicas, Mascarillas y CDD
+numero_intervenciones = "8" ## PENDIENTE
+# Mascarillas y protectores faciales
+fecha_corte_mascarillas = "5"
+devengado_mascarillas = "11,111"
+# Compromisos de desempeño
+transferido_compromisos = "22,222"
+acciones_centrales_cdd = "88,888"
 
+# Generamos la lista de Regiones
 lista_regiones = ["AMAZONAS", "TACNA", "AREQUIPA"]
 
+# For loop para cada región
 for region in lista_regiones:
+    # Generamos la tabla "tabla1_region" - mantiene la región i de la lista de
+    # regiones
     region_seleccionada = tabla_intervenciones['region'] == region
     tabla1_region = tabla_intervenciones[region_seleccionada]
+    # Generamos los indicadores de PIM y ejecución de intervenciones
     pim_intervenciones_region = str('{:,.0f}'.format(tabla1_region["pim_reporte_siaf_20210923"].sum()))
     ejecucion_intervenciones_region = str('{:,.0f}'.format(tabla1_region["presupuesto_devengado_reporte_siaf_20210923"].sum()))
+    # Incluimos el código del Documento
     document = docx.Document(here() / "input/formato.docx") # Creación del documento en base al template
     title=document.add_heading('AYUDA MEMORIA', 0) #Título del documento
     run = title.add_run()
@@ -49,6 +63,7 @@ for region in lista_regiones:
     run = title.add_run()
     run.add_break()
     title.add_run(datetime.today().strftime('%d-%m-%y'))
+    # Incluimos sección 1 de intervenciones pedagógicas
     document.add_heading("1. Intervenciones pedagógicas", level=1) # 1) Intervenciones pedagógicas
     interv_parrafo1 = document.add_paragraph(
     "Las Unidades Ejecutoras de Educación de la región " , style="List Bullet")
@@ -94,16 +109,6 @@ for region in lista_regiones:
     interv_parrafo4.add_run(".")
     interv_parrafo4.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     document.save(here() / f'output/{region}_AM.docx')
-
-
-
-# Mascarillas y protectores faciales
-fecha_corte_mascarillas = "5"
-devengado_mascarillas = "11,111"
-
-# Compromisos de desempeño
-transferido_compromisos = "22,222"
-acciones_centrales_cdd = "88,888"
 
 
 # # Contenido -------------------------------------------------------------------
