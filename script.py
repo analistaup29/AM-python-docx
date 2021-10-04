@@ -42,10 +42,10 @@ data_mascarillas = clean_names(data_mascarillas) # Normalizamos nombres
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
 # colapsamos a nivel de Region y UE
-tabla_mascarillas = data_mascarillas[["region","nom_ue","certificado","comprometido_anual","devengado","transferencia"]]. \
+data_mascarillas = data_mascarillas[["region","nom_ue","transferencia","pim","certificado","comprometido_anual","devengado"]]. \
    groupby(by = ["region", "nom_ue"], as_index=False).sum()
 
-tabla_mascarillas["region"] = tabla_mascarillas["region"].str.split(". ", n=1).apply(lambda l: "".join(l[1]))
+data_mascarillas["region"] = data_mascarillas["region"].str.split(". ", n=1).apply(lambda l: "".join(l[1]))
 
 # C) Compromisos de desempeño
 
@@ -100,11 +100,26 @@ for region in lista_regiones:
     ##########################################################################
     # Generamos la tabla "tabla1_mascarilla" - mantiene la región i de la lista de
     # regiones
-    region_seleccionada = tabla_mascarillas['region'] == region
-    tabla2_region = tabla_mascarillas[region_seleccionada]
+    region_seleccionada = data_mascarillas['region'] == region
+    tabla_mascarillas = data_mascarillas[region_seleccionada]
     # Generamos los indicadores de PIM y ejecución de intervenciones
-    transferencia_mascarilla = str('{:,.1f}'.format(tabla2_region["transferencia"].sum()/1000000))
-    devengado_mascarillas=str('{:.1%}'.format(tabla2_region["devengado"].sum()/tabla2_region["transferencia"].sum()))
+    transferencia_mascarilla = str('{:,.1f}'.format(tabla_mascarillas["transferencia"].sum()/1000000))
+    devengado_mascarillas=str('{:.1%}'.format(tabla_mascarillas["devengado"].sum()/tabla_mascarillas["transferencia"].sum()))
+    # Generamos la tabla "tabla_mascarillas_formato" - mantiene la región i de la lista de regiones
+    tabla_mascarillas_formato = data_mascarillas[region_seleccionada]
+    tabla_mascarillas_formato["% certificado"]=tabla_mascarillas_formato["certificado"]/tabla_mascarillas_formato["pim"]
+    tabla_mascarillas_formato["% comprometido"]=tabla_mascarillas_formato["comprometido_anual"]/tabla_mascarillas_formato["pim"]
+    tabla_mascarillas_formato["% devengado"]=tabla_mascarillas_formato["devengado"]/tabla_mascarillas_formato["pim"]
+    # Formato para la tabla
+    formato_tabla_mascarillas = {
+        "nom_ue": "{}",
+        "transferencia": "{:,.0f}",
+        "pim" : "{:,.0f}",
+        "% certificado" : "{:.1%}",
+        "% comprometido": "{:.1%}",
+        "% devengado": "{:.1%}",
+        }
+    tabla_mascarillas_formato = tabla_mascarillas_formato.transform({k: v.format for k, v in formato_tabla_mascarillas.items()})  
     ##########################################################################
     # Generamos la tabla "tabla1_cdd" - mantiene la región i de la lista de
     # regiones
@@ -210,14 +225,28 @@ textiles protectores faciales fue del ")
     mascarillas_parrafo3.add_run(devengado_mascarillas)
     mascarillas_parrafo3.add_run(" (devengado) según se presenta a continuación:")
     mascarillas_parrafo3.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-    # Incluir tabla 2 mascarillas
-    tabla2_interv = document.add_table(tabla2_region.shape[0]+1, tabla2_region.shape[1])
-    tabla2_interv.style = "Colorful List Accent 1"
-    for j in range(tabla2_region.shape[-1]):
-        tabla2_interv.cell(0,j).text = tabla2_region.columns[j]
-    for i in range(tabla2_region.shape[0]):
-        for j in range(tabla2_region.shape[-1]):
-            tabla2_interv.cell(i+1,j).text = str(tabla2_region.values[i,j])
+    # Incluir tabla 1 mascarillas
+    tabla1_mascarillas = document.add_table(tabla_mascarillas_formato.shape[0]+1, tabla_mascarillas_formato.shape[1])
+    tabla1_mascarillas.style = "Colorful List Accent 1"
+    #Formato de tabla pendiente, al parecer funciona sin problema en libre office
+    #from docx.shared import Cm, Inches
+    #tabla1_mascarillas.allow_autofit = False
+    #for cell in tabla1_mascarillas.columns[0].cells:
+    #    cell.width = Inches(0.5)
+    ## Header de la tabla revisar
+    row_mascarilla = tabla1_mascarillas.rows[0].cells
+    row_mascarilla[0].text = "Unidad Ejecutora"
+    row_mascarilla[1].text = "Transferencia"
+    row_mascarilla[2].text = "PIM"
+    row_mascarilla[3].text = "% Certificado"
+    row_mascarilla[4].text = "% Comprometido"
+    row_mascarilla[5].text = "% Devengado"
+    ## Contenido de la tabla
+    for j in range(tabla_mascarillas_formato.shape[-1]):
+        tabla1_mascarillas.cell(0,j).text = tabla_mascarillas_formato.columns[j]
+    for i in range(tabla_mascarillas_formato.shape[0]):
+        for j in range(tabla_mascarillas_formato.shape[-1]):
+            tabla1_mascarillas.cell(i+1,j).text = str(tabla_mascarillas_formato.values[i,j])
     ##########################################################################
     # Incluimos sección 3 Compromisos de desempeño
     document.add_heading("3. Compromisos de desempeño", level=1)
