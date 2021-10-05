@@ -7,14 +7,39 @@ Created on Tue Sep 21 15:54:48 2021
 # Importar librerías ----------------------------------------------------------
 import docx
 import pandas as pd
+import nums_from_string
+import os
 from datetime import datetime
 from pyprojroot import here
 from janitor import clean_names # pip install pyjanitor
+from pathlib import Path
 
-# Opciones --------------------------------------------------------------------
+# Fechas de corte -------------------------------------------------------------
+# Importamos los nombres de los archivos en la carpeta input
+lista_archivos = os.listdir(Path(here() / "input"))
 
-# Formato de tablas
-pd.options.display.float_format = '${:,.0f}'.format
+## A) Base disponibilidad
+# Nos quedamos con el nombre de archivo para la base de disponibilidad
+fecha_corte_disponibilidad = str([s for s in lista_archivos if "Disponibilidad_Presupuestal" in s])
+# Extraemos la fecha del nombre de archivo
+fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_corte_disponibilidad)
+# Convertimos a formato string
+fecha_corte_disponibilidad = ''.join(fecha_corte_disponibilidad) 
+# Convertimos a formato numérico
+fecha_corte_disponibilidad_date = datetime.strptime(fecha_corte_disponibilidad, '%Y%m%d').date()
+
+## B) Siaf de mascarillas
+fecha_corte_mascarillas = "2021-09-20"
+
+# C) Compromisos de desempeño
+fecha_corte_compromisos = "2021-09-21"
+
+# Creamos tabla con fechas de corte
+tabla_fechas_corte = (
+    ("Intervenciones pedagógicas", fecha_corte_disponibilidad_date),
+    ("Mascarillas y protectores faciales", fecha_corte_mascarillas),
+    ("Compromisos de desempeño", fecha_corte_compromisos)
+)
 
 # Transformación de Datasets --------------------------------------------------
 
@@ -24,16 +49,19 @@ nombre_regiones = pd.read_excel(here() / "input/nombre_regiones.xlsx")
 
 # A) Base de disponibilidad
 ## Cargamos base de disponibilidad
-data_intervenciones = pd.read_excel(here() / "input/Disponibilidad_Presupuestal_20210923interv.xlsx")
+data_intervenciones = pd.read_excel(here() / f"input/Disponibilidad_Presupuestal_{fecha_corte_disponibilidad}interv.xlsx")
 data_intervenciones = clean_names(data_intervenciones) # Normalizamos nombres
 
 # Mantenemos variables de interés (PIM, DEVENGADO, COMPROMETIDO CERTIFICADO) y 
 # colapsamos a nivel de Region, Intervencion Pedagogica y Cas-No-Cas
-data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", "pim_reporte_siaf_20210923", "presupuesto_certificado_reporte_siaf_20210923", "comprometido_anual_reporte_siaf_20210923", "presupuesto_devengado_reporte_siaf_20210923"]]. \
+data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_certificado_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"]]. \
    groupby(by = ["region", "cas_no_cas", "intervencion_pedagogica"] , as_index=False).sum()
 
 # Eliminamos filas de "No hay Intervenciones pedagogicas"
 data_intervenciones = data_intervenciones[data_intervenciones['intervencion_pedagogica'] != "No hay Intervenciones Pedagógicas"]
+
+# (PENDIENTE) FOR LOOP de número de intervenciones pedagógicas, Mascarillas y CDD
+numero_intervenciones = "8" ## PENDIENTE
 
 # B) Siaf de mascarillas
 ## Cargamos la base insumo de mascarillas
@@ -67,10 +95,6 @@ data_cdd = data_cdd.merge(right = nombre_regiones, how="left", on = "pliego")
 tabla_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "generica", "monto", "ds_085_2021_ef", "ds_218_2021_ef", "ds_220_2021_ef"]]. \
     groupby(by = ["region", "programa_presupuestal", "generica"], as_index=False).sum()
 
-# (PENDIENTE) FOR LOOP de número de intervenciones pedagógicas, Mascarillas y CDD
-numero_intervenciones = "8" ## PENDIENTE
-# Mascarillas y protectores faciales
-fecha_corte_mascarillas = "21 de setiembre de 2021"
 
 # Generamos la lista de Regiones
 lista_regiones = ["AMAZONAS", "TACNA", "AREQUIPA"]
@@ -83,18 +107,18 @@ for region in lista_regiones:
     # Generamos los indicadores de PIM y ejecución de intervenciones
     region_seleccionada = data_intervenciones['region'] == region #Seleccionar region
     tabla_intervenciones = data_intervenciones[region_seleccionada]    
-    pim_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones["pim_reporte_siaf_20210923"].sum()))
-    ejecucion_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones["presupuesto_devengado_reporte_siaf_20210923"].sum()))
+    pim_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
+    ejecucion_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
     # Generamos la tabla "tabla1_region" - mantiene la región i de la lista de regiones
     tabla_intervenciones_formato = data_intervenciones[region_seleccionada]
     # Formato para la tabla
     formato_tabla_intervenciones = {
         "cas_no_cas": "{}",
         "intervencion_pedagogica" : "{}",
-        "pim_reporte_siaf_20210923": "{:,.0f}",
-        "presupuesto_certificado_reporte_siaf_20210923" : "{:,.0f}",
-        "comprometido_anual_reporte_siaf_20210923" : "{:,.0f}",
-        "presupuesto_devengado_reporte_siaf_20210923": "{:,.0f}",
+        f"pim_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
+        f"presupuesto_certificado_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
+        f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
+        f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
         }
     tabla_intervenciones_formato = tabla_intervenciones_formato.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})        
     ##########################################################################
@@ -242,6 +266,19 @@ siguiente detalle")
     for i in range(tabla3_region.shape[0]):
         for j in range(tabla3_region.shape[-1]):
             tabla1_cdd.cell(i+1,j).text = str(tabla3_region.values[i,j])
+    ##########################################################################
+    # Incluimos anexo de fechas de actualización
+    document.add_heading("4. Anexos", level=1)
+    anexo_parrafo1 = document.add_paragraph("Las fechas de actualización para las \
+secciones del documento se presentan en la tabla siguiente")
+    table = document.add_table(rows=1, cols=2)
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "Sección"
+    hdr_cells[1].text = "Fecha de actualización"
+    for id, name in tabla_fechas_corte:
+        row = table.add_row().cells
+        row[0].text = str(id)
+        row[1].text = str(name)
     ##########################################################################
     # Guardamos documento
     document.save(here() / f'output/{region}_AM.docx')
