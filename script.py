@@ -10,6 +10,7 @@ import pandas as pd
 from datetime import datetime
 from pyprojroot import here
 from janitor import clean_names # pip install pyjanitor
+from docx.shared import Pt
 
 # Opciones --------------------------------------------------------------------
 
@@ -47,6 +48,12 @@ data_mascarillas = data_mascarillas[["region","nom_ue","transferencia","pim","ce
 
 data_mascarillas["region"] = data_mascarillas["region"].str.split(". ", n=1).apply(lambda l: "".join(l[1]))
 
+data_mascarillas["UNIDAD EJECUTORA"]=data_mascarillas["nom_ue"]
+data_mascarillas["RECURSOS TRANSF. (*)"]=data_mascarillas["transferencia"]
+data_mascarillas["PIM"]=data_mascarillas["pim"]
+data_mascarillas["CERT. (%)"]=data_mascarillas["certificado"]/data_mascarillas["pim"]
+data_mascarillas["COMPRO. (%)"]=data_mascarillas["comprometido_anual"]/data_mascarillas["pim"]
+data_mascarillas["DEVENGADO (%)"]=data_mascarillas["devengado"]/data_mascarillas["pim"]
 # C) Compromisos de desempeño
 
 ## Cargamos data de compromisos de desempeño
@@ -107,17 +114,14 @@ for region in lista_regiones:
     devengado_mascarillas=str('{:.1%}'.format(tabla_mascarillas["devengado"].sum()/tabla_mascarillas["transferencia"].sum()))
     # Generamos la tabla "tabla_mascarillas_formato" - mantiene la región i de la lista de regiones
     tabla_mascarillas_formato = data_mascarillas[region_seleccionada]
-    tabla_mascarillas_formato["% certificado"]=tabla_mascarillas_formato["certificado"]/tabla_mascarillas_formato["pim"]
-    tabla_mascarillas_formato["% comprometido"]=tabla_mascarillas_formato["comprometido_anual"]/tabla_mascarillas_formato["pim"]
-    tabla_mascarillas_formato["% devengado"]=tabla_mascarillas_formato["devengado"]/tabla_mascarillas_formato["pim"]
     # Formato para la tabla
     formato_tabla_mascarillas = {
-        "nom_ue": "{}",
-        "transferencia": "{:,.0f}",
-        "pim" : "{:,.0f}",
-        "% certificado" : "{:.1%}",
-        "% comprometido": "{:.1%}",
-        "% devengado": "{:.1%}",
+        "UNIDAD EJECUTORA": "{}",
+        "RECURSOS TRANSF. (*)": "{:,.0f}",
+        "PIM" : "{:,.0f}",
+        "CERT. (%)" : "{:.1%}",
+        "COMPRO. (%)": "{:.1%}",
+        "DEVENGADO (%)": "{:.1%}",  
         }
     tabla_mascarillas_formato = tabla_mascarillas_formato.transform({k: v.format for k, v in formato_tabla_mascarillas.items()})  
     ##########################################################################
@@ -157,14 +161,6 @@ for region in lista_regiones:
     # Incluimos tabla 1 intervenciones
     tabla1_interv = document.add_table(tabla_intervenciones_formato.shape[0]+1, tabla_intervenciones_formato.shape[1])
     tabla1_interv.style = "Colorful List Accent 1"
-    ## Header de la tabla
-    row = tabla1_interv.rows[0].cells
-    row[0].text = "CAS - NO CAS"
-    row[1].text = "Intervencion Pedagogica"
-    row[2].text = "PIM"
-    row[3].text = "Certificado"
-    row[4].text = "Comprometido"
-    row[5].text = "Devengado"
     ## Contenido de la tabla
     for i in range(tabla_intervenciones_formato.shape[0]):
         for j in range(tabla_intervenciones_formato.shape[-1]):
@@ -247,6 +243,12 @@ textiles protectores faciales fue del ")
     for i in range(tabla_mascarillas_formato.shape[0]):
         for j in range(tabla_mascarillas_formato.shape[-1]):
             tabla1_mascarillas.cell(i+1,j).text = str(tabla_mascarillas_formato.values[i,j])
+    mascarillas_parrafo4 = document.add_paragraph("*Recursos transferidos mediante el Decreto de Urgencia N° 021-2021.")
+    mascarillas_parrafo4_fuente=mascarillas_parrafo4.add_run().font 
+    mascarillas_parrafo4_fuente.size=Pt(8) # revisar no cambia el tamaño de fuente
+    mascarillas_parrafo5 = document.add_paragraph("Fuente: SIAF MPP al 14 de septiembre de 2021.")
+    mascarillas_parrafo5_fuente=mascarillas_parrafo4.add_run().font
+    mascarillas_parrafo5_fuente.size=Pt(8) # revisar no cambia el tamaño de fuente
     ##########################################################################
     # Incluimos sección 3 Compromisos de desempeño
     document.add_heading("3. Compromisos de desempeño", level=1)
