@@ -170,7 +170,7 @@ for region in lista_regiones:
     tabla2 = df_at[region_seleccionada]
     costo_at = str('{:,.0f}'.format(tabla2["COSTO"].sum()))
     apm_at = str('{:,.0f}'.format(tabla2["PROGRAMADO POR MINEDU"].sum())) 
-    diploma_gore_at = str('{:,.0f}'.format(tabla2["PROGRAMADO POR MINEDU"].sum())) 
+    diploma_gore_at = str('{:,.0f}'.format(tabla2["PROGRAMADO POR EL PLIEGO REGIONAL"].sum())) 
     ds_187_at = str('{:,.0f}'.format(tabla2["TRANSFERENCIA POR DS 187-2021"].sum())) 
     tabla_at_resumen = tabla2.groupby(['UNIDAD EJECUTORA'], as_index=False).sum() 
     tabla_at_resumen = tabla_at_resumen.round(2)
@@ -209,7 +209,7 @@ for region in lista_regiones:
     encarg_parrafo1 = document.add_paragraph(
     "Para la región ")
     encarg_parrafo1.add_run(f'{region}, por concepto de Asignaciones Temporales \
-por prestar servicios en condiciones especiales') 
+por prestar servicios en condiciones especiales ') 
     encarg_parrafo1.add_run('se ha calculado para el ')
     encarg_parrafo1.add_run(datetime.today().strftime('%Y'))
     encarg_parrafo1.add_run(', un costo de S/.')
@@ -226,7 +226,7 @@ mediante encargaturas')
     
     encarg_parrafo2 = document.add_paragraph('Para financiar estos conceptos, el')
     #Insertar valor del año pasado
-    encarg_parrafo2.add_run('el MINEDU gestionó una programación directa de recursos\
+    encarg_parrafo2.add_run(' MINEDU gestionó una programación directa de recursos\
     en el PIA 2021 de las Unidades Ejecutoras de Educación de la Región ')
     encarg_parrafo2.add_run(region)  
     encarg_parrafo2.add_run(' por el monto de S/.')
@@ -261,6 +261,11 @@ de partidas por el monto de S/.')  # Este párrafo tendrá que variar año tras 
     encarg_parrafo3.add_run(' para financiar el costo diferencial.')
     encarg_parrafo3.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
+    encarg_parrafo_add = document.add_paragraph('Actualmente está en gestión \
+en el MINEDU la segunda transferencia de recursos por concepto de encargaturas, \
+el cual debería realizarse antes del 26 de noviembre del 2021 \
+de acuerdo al plazo legal establecido en la Ley de Presupuesto 2021. ')
+
     encarg_parrafo4 = document.add_paragraph('En el siguiente cuadro se muestran el costo \
 y los montos programados/transferidos a la Región ')
     encarg_parrafo4.add_run(region)
@@ -284,7 +289,7 @@ y los montos programados/transferidos a la Región ')
 por prestar servicios en condiciones especiales, se ha calculado para el 2021 un costo de \
 S/ ')    
     encarg_parrafo5.add_run(f'{costo_at} ') #Insertar valor de base de datos    
-    encarg_parrafo5 = document.add_paragraph('que incluye el pago por prestar servicios \
+    encarg_parrafo5.add_run('que incluye el pago por prestar servicios \
 en zonas rurales, de frontera, VRAEM, Instituciones Educativas Unidocentes, Multigrado \
 Bilingüe y acreditar dominio de lengua originaria, de los profesores y auxiliares de \
 educación nombrados y contratados.')        
@@ -328,7 +333,7 @@ temporales a favor los profesores y auxiliares de educación nombrados y contrat
 la segunda transferencia de recursos por concepto de asignaciones temporales, \
 el cual debería realizarse antes del ')
     encarg_parrafo8.add_run('26 de noviembre del 2021') #Esta fecha se actualizará año a año 
-    encarg_parrafo8.add_run(' de acuerdo al plazo legal establecido en la Ley de Presupuesto') 
+    encarg_parrafo8.add_run(' de acuerdo al plazo legal establecido en la Ley de Presupuesto ') 
     encarg_parrafo8.add_run(datetime.today().strftime('%Y')) #Año actual
     encarg_parrafo8.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     
@@ -347,19 +352,6 @@ montos programados/transferidos a la Región ')
 
     parrafo_espacio = document.add_paragraph('')        
 
-    bs_parrafo6 = document.add_paragraph(' De la misma forma, durante el presente año, para la Región ')  
-    bs_parrafo6.add_run(region)
-    bs_parrafo6.add_run(' se ha realizado las siguientes transferencias')
-    bs_parrafo6.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-
-    bs_parrafo7 = document.add_paragraph(' Por otro lado, para el año ')
-    bs_parrafo7.add_run('2022 ') #Calcular año posterior
-    bs_parrafo7.add_run('el MINEDU está gestionando la programación parcial de recursos en los \
-presupuestos de las Unidades Ejecutoras para atender encargaturas, asignaciones temporales, \
-beneficios sociales, entre otros y, el financiamiento restante, se realizará de manera oportuna el ')
-    bs_parrafo7.add_run('2022, ') #Calcular año posterior
-    bs_parrafo7.add_run('preferentemente antes que termine el primer semestre de dicho año fiscal.')    
-    bs_parrafo7.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY    
 
 #----------------------------------------------------------------------------------------------#
 
@@ -398,14 +390,14 @@ nombrados y contratados.')
     encarg_parrafo11.add_run(' de las Unidades Ejecutoras de Educación de la Región ')
     encarg_parrafo11.add_run(region)
     encarg_parrafo11.add_run(' por el monto de S/. ')
-    encarg_parrafo11.add_run(f'{apm_bs}.') #Insertar valor de base de datos    
-    encarg_parrafo11.add_run('  Lo cual fue comunicado a través del ')
+    encarg_parrafo11.add_run(f'{apm_bs},') #Insertar valor de base de datos    
+    encarg_parrafo11.add_run(' lo cual fue comunicado a través del ')
     encarg_parrafo11.add_run('Oficio Múltiple N° 00011-2021-MINEDU/SPE-OPEP-UPP') #Esto cambiará cada año
     encarg_parrafo11.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
     encarg_parrafo12 = document.add_paragraph('Con ')
     encarg_parrafo12.add_run('Decreto Supremo 072-2021 publicado el 21 de abril de 2021')
-    encarg_parrafo12.add_run('en el marco de lo autorizado en los literales a), d) y e) \
+    encarg_parrafo12.add_run(' en el marco de lo autorizado en los literales a), d) y e) \
 del numeral 40.1 de la Ley de Presupuesto ')
     encarg_parrafo12.add_run(datetime.today().strftime('%Y')) #Año actual
     encarg_parrafo12.add_run(', se ha realizado una transferencia de partidas por el monto de S/ ')   
@@ -419,11 +411,11 @@ y auxiliares de educación nombrados y contratados que fueron reconocidos hasta 
 
     encarg_parrafo13 = document.add_paragraph('Asimismo, mediante ')
     encarg_parrafo13.add_run('Decreto Supremo 256-2021 publicado el 24 de setiembre de 2021, ')  #Esto cambiará cada año
-    encarg_parrafo13.add_run(', se realizó la segunda transferencia de recursos por concepto de \
+    encarg_parrafo13.add_run(' se realizó la segunda transferencia de recursos por concepto de \
 beneficios sociales a favor de docentes y auxiliares nombrados y contratados, cuyos beneficios fueron \
 reconocidos durante el año ')
     encarg_parrafo13.add_run(datetime.today().strftime('%Y')) #Año actual
-    encarg_parrafo13.add_run(' transfiriéndose S/. ')
+    encarg_parrafo13.add_run(', transfiriéndose S/. ')
     encarg_parrafo13.add_run(f'{ds_256_bs}.') #Insertar valor de base de datos   
     encarg_parrafo13.add_run('  a las Unidades Ejecutoras de Educación de la Región ')
     encarg_parrafo13.add_run(region)
@@ -437,6 +429,7 @@ programados/transferidos a la Región ')
 
     tabla_bs = document.add_table(tabla_bs_resumen.shape[0]+1, tabla_bs_resumen.shape[1])
     tabla_bs.style = "Colorful List Accent 1"
+      
     for j in range(tabla_bs_resumen.shape[-1]):
         tabla_bs.cell(0,j).text = tabla_bs_resumen.columns[j]
     for i in range(tabla_bs_resumen.shape[0]):
@@ -461,8 +454,6 @@ programados/transferidos a la Región ')
     row[1].text = "CONCEPTO"
     row[2].text = "COSTO"
 
-    for j in range(tabla_transferencia_formato.shape[-1]):
-        tabla_bs.cell(0,j).text = tabla_transferencia_formato.columns[j]
     for i in range(tabla_transferencia_formato.shape[0]):
         for j in range(tabla_transferencia_formato.shape[-1]):
             tabla_transf.cell(i+1,j).text = str(tabla_transferencia_formato.values[i,j])
