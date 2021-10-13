@@ -38,7 +38,7 @@ data_intervenciones = data_intervenciones[data_intervenciones['intervencion_peda
 
 # B) Siaf de mascarillas
 ## Cargamos la base insumo de mascarillas
-data_mascarillas = pd.read_excel(here() / "input/Incorporación_DU_SIAF_20210921.xlsx", sheet_name='Sheet1')
+data_mascarillas = pd.read_excel(here() / "input/Incorporación_DU_SIAF_20211003.xlsx", sheet_name='Sheet1')
 data_mascarillas = clean_names(data_mascarillas) # Normalizamos nombres
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
@@ -77,7 +77,7 @@ tabla_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "ge
 # (PENDIENTE) FOR LOOP de número de intervenciones pedagógicas, Mascarillas y CDD
 numero_intervenciones = "8" ## PENDIENTE
 # Mascarillas y protectores faciales
-fecha_corte_mascarillas = "21 de setiembre de 2021"
+fecha_corte_mascarillas = "03 de octubre de 2021"
 
 # Generamos la lista de Regiones
 lista_regiones = ["AMAZONAS", "TACNA", "AREQUIPA"]
@@ -246,7 +246,7 @@ textiles protectores faciales fue del ")
     mascarillas_parrafo4 = document.add_paragraph("*Recursos transferidos mediante el Decreto de Urgencia N° 021-2021.")
     mascarillas_parrafo4_fuente=mascarillas_parrafo4.add_run().font 
     mascarillas_parrafo4_fuente.size=Pt(8) # revisar no cambia el tamaño de fuente
-    mascarillas_parrafo5 = document.add_paragraph("Fuente: SIAF MPP al 14 de septiembre de 2021.")
+    mascarillas_parrafo5 = document.add_paragraph("Fuente: SIAF MPP al 03 de octubre de 2021.")
     mascarillas_parrafo5_fuente=mascarillas_parrafo4.add_run().font
     mascarillas_parrafo5_fuente.size=Pt(8) # revisar no cambia el tamaño de fuente
     ##########################################################################
