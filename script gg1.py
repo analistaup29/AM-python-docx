@@ -208,11 +208,10 @@ for region in lista_regiones:
     ##Párrafos
     encarg_parrafo1 = document.add_paragraph(
     "Para la región ")
-    encarg_parrafo1.add_run(f'{region}, por concepto de Asignaciones Temporales \
-por prestar servicios en condiciones especiales ') 
+    encarg_parrafo1.add_run(f'{region}, por concepto de encargaturas, ') 
     encarg_parrafo1.add_run('se ha calculado para el ')
     encarg_parrafo1.add_run(datetime.today().strftime('%Y'))
-    encarg_parrafo1.add_run(', un costo de S/.')
+    encarg_parrafo1.add_run(' un costo de S/.')
     encarg_parrafo1.add_run(f'{costo_enc}') #Insertar valor de base de datos
     encarg_parrafo1.add_run(
     ' que incluye la Jornada de Trabajo Adicional de 10 horas \
