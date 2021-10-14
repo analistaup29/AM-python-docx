@@ -92,9 +92,8 @@ data_cdd = data_cdd.merge(right = nombre_regiones, how="left", on = "pliego")
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
 # colapsamos a nivel de Region y UE
-tabla_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "generica", "monto", "ds_085_2021_ef", "ds_218_2021_ef", "ds_220_2021_ef"]]. \
+data_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "generica", "monto", "ds_085_2021_ef", "ds_218_2021_ef", "ds_220_2021_ef"]]. \
     groupby(by = ["region", "programa_presupuestal", "generica"], as_index=False).sum()
-
 
 # Generamos la lista de Regiones
 lista_regiones = ["AMAZONAS", "TACNA", "AREQUIPA"]
@@ -109,7 +108,7 @@ for region in lista_regiones:
     tabla_intervenciones = data_intervenciones[region_seleccionada]    
     pim_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
     ejecucion_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
-    # Generamos la tabla "tabla1_region" - mantiene la región i de la lista de regiones
+    # Generamos la tabla con formato
     tabla_intervenciones_formato = data_intervenciones[region_seleccionada]
     # Formato para la tabla
     formato_tabla_intervenciones = {
@@ -120,7 +119,7 @@ for region in lista_regiones:
         f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
         f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
         }
-    tabla_intervenciones_formato = tabla_intervenciones_formato.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})        
+    tabla_intervenciones_formato = tabla_intervenciones_formato.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
     ##########################################################################
     # Generamos la tabla "tabla1_mascarilla" - mantiene la región i de la lista de
     # regiones
@@ -130,13 +129,24 @@ for region in lista_regiones:
     transferencia_mascarilla = str('{:,.1f}'.format(tabla2_region["transferencia"].sum()/1000000))
     devengado_mascarillas=str('{:.1%}'.format(tabla2_region["devengado"].sum()/tabla2_region["transferencia"].sum()))
     ##########################################################################
-    # Generamos la tabla "tabla1_cdd" - mantiene la región i de la lista de
+    # Generamos la tabla "tabla_cdd" - mantiene la región i de la lista de
     # regiones
-    region_seleccionada = tabla_cdd['region'] == region
-    tabla3_region = tabla_cdd[region_seleccionada]
+    region_seleccionada = data_cdd['region'] == region
+    tabla_cdd = data_cdd[region_seleccionada]
     # Generamos CDD transferido
-    cdd_transferido = str('{:,.0f}'.format(tabla3_region["monto"].sum()))
+    cdd_transferido = str('{:,.0f}'.format(tabla_cdd["monto"].sum()))
     cdd_acciones_centrales = "88,888"
+     # Generamos la tabla con formato
+    tabla_cdd_formato = data_cdd[region_seleccionada]
+    formato_tabla_cdd = {
+        "programa_presupuestal": "{}",
+        "generica": "{}",
+        "monto": "{:,.0f}",
+        "ds_085_2021_ef": "{:,.0f}",
+        "ds_218_2021_ef": "{:,.0f}",
+        "ds_220_2021_ef": "{:,.0f}",
+        }
+    tabla_cdd_formato = tabla_cdd_formato.transform({k: v.format for k, v in formato_tabla_cdd.items()})            
     ##########################################################################
     # Incluimos el código del Documento
     document = docx.Document(here() / "input/formato.docx") # Creación del documento en base al template
@@ -259,24 +269,33 @@ Educación del Gobierno Regional de ", style="List Bullet")
     cdd_parrafo1.add_run(" corresponden a las acciones centrales, según el \
 siguiente detalle")
     cdd_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-    tabla1_cdd = document.add_table(tabla3_region.shape[0]+1, tabla3_region.shape[1])
+    # Incluimos tabla de CDD
+    tabla1_cdd = document.add_table(tabla_cdd_formato.shape[0]+1, tabla_cdd_formato.shape[1])
     tabla1_cdd.style = "Colorful List Accent 1"
-    for j in range(tabla3_region.shape[-1]):
-        tabla1_cdd.cell(0,j).text = tabla3_region.columns[j]
-    for i in range(tabla3_region.shape[0]):
-        for j in range(tabla3_region.shape[-1]):
-            tabla1_cdd.cell(i+1,j).text = str(tabla3_region.values[i,j])
+    # Header de la tabla
+    row = tabla1_cdd.rows[0].cells
+    row[0].text = "Programa presupuestal"
+    row[1].text = "Genérica"
+    row[2].text = "Total"
+    row[3].text = "DS 085-2021-EF"
+    row[4].text = "DS 218-2021-EF"
+    row[5].text = "DS 220-2021-EF"
+    ## Contenido de la tabla
+    for i in range(tabla_cdd_formato.shape[0]):
+        for j in range(tabla_cdd_formato.shape[-1]):
+            tabla1_cdd.cell(i+1,j).text = str(tabla_cdd_formato.values[i,j])
     ##########################################################################
     # Incluimos anexo de fechas de actualización
     document.add_heading("4. Anexos", level=1)
     anexo_parrafo1 = document.add_paragraph("Las fechas de actualización para las \
 secciones del documento se presentan en la tabla siguiente")
-    table = document.add_table(rows=1, cols=2)
-    hdr_cells = table.rows[0].cells
+    tabla_anexo_corte = document.add_table(rows=1, cols=2)
+    tabla_anexo_corte.style = "Colorful List Accent 1"
+    hdr_cells = tabla_anexo_corte.rows[0].cells
     hdr_cells[0].text = "Sección"
     hdr_cells[1].text = "Fecha de actualización"
     for id, name in tabla_fechas_corte:
-        row = table.add_row().cells
+        row = tabla_anexo_corte.add_row().cells
         row[0].text = str(id)
         row[1].text = str(name)
     ##########################################################################
