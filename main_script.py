@@ -29,12 +29,14 @@ fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_co
 fecha_corte_disponibilidad = ''.join(fecha_corte_disponibilidad) 
 # Convertimos a formato numérico
 fecha_corte_disponibilidad_date = datetime.strptime(fecha_corte_disponibilidad, '%Y%m%d').date()
+# Damos estilo
+fecha_corte_disponibilidad_date = fecha_corte_disponibilidad_date.strftime("%d %b %Y")
 
 ## B) Siaf de mascarillas
-fecha_corte_mascarillas = "2021-10-03"
+fecha_corte_mascarillas = "03 Oct 2021"
 
 # C) Compromisos de desempeño
-fecha_corte_compromisos = "2021-09-21"
+fecha_corte_compromisos = "21 Sep 2021"
 
 # Creamos tabla con fechas de corte
 tabla_fechas_corte = (
@@ -409,6 +411,8 @@ for region in lista_regiones:
     #####################################################
     
     document.add_heading("1. Intervenciones pedagógicas", level=1) # 1) Intervenciones pedagógicas
+    interv_fecha_actualizacion = document.add_paragraph("   Actualizado al ")
+    interv_fecha_actualizacion.add_run(fecha_corte_disponibilidad_date)
     interv_parrafo1 = document.add_paragraph(
     "Las Unidades Ejecutoras de Educación de la región " , style="List Bullet")
     interv_parrafo1.add_run(region)
@@ -491,8 +495,9 @@ for region in lista_regiones:
     ###########################################################
     # Incluimos sección 2 Mascarillas y protectores faciales #
     ###########################################################
-
     document.add_heading("2. Mascarillas y protectores faciales", level=1)
+    mascarillas_fecha_actualizacion = document.add_paragraph("   Actualizado al ")
+    mascarillas_fecha_actualizacion.add_run(fecha_corte_mascarillas)
     mascarillas_parrafo1 = document.add_paragraph(
     "Mediante el Decreto de Urgencia N° 021-2021 y la Resolución de Secretaría \
 General N° 047-2021-MINEDU, se transfirieron S/ ", style="List Bullet")
@@ -556,6 +561,9 @@ textiles protectores faciales fue del ")
     ################################################
 
     document.add_heading("3. Compromisos de desempeño", level=1)
+    cdd_fecha_actualizacion = document.add_paragraph("   Actualizado al ")
+    cdd_fecha_actualizacion.add_run(fecha_corte_compromisos)
+
     cdd_parrafo1 = document.add_paragraph(
         "En el marco de la Norma Técnica para la implementación del mecanismo \
 denominado Compromisos de Desempeño 2021, aprobada por Resolución Ministerial \
@@ -567,6 +575,10 @@ Educación del Gobierno Regional de ", style="List Bullet")
     cdd_parrafo1.add_run(cdd_transferido)
     cdd_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     # Incluimos tabla de CDD
+    cdd_titulo = document.add_paragraph()
+    cdd_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+    cdd_tit = cas_titulo.add_run("Transferencias de compromisos de desempeño")
+    cdd_tit.bold = True        
     tabla1_cdd = document.add_table(tabla_cdd_formato.shape[0]+1, tabla_cdd_formato.shape[1])
     tabla1_cdd.style = "formato_tabla_minedu"
     # Header de la tabla
