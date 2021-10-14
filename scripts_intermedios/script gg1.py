@@ -40,7 +40,7 @@ tabla_encargaturas_resumen = df_consolidado_enc[['REGION','UNIDAD EJECUTORA','CO
                                          'APMeINCREMENTOS','NM ENCARGATURAS']]
 
 # D) Base de Asignaciones Temporales
-df_consolidado_at = pd.read_excel(here() / 'input\CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
+df_consolidado_at = pd.read_excel(here() / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
 df_consolidado_at.fillna(0, inplace =  True)      
 df_consolidado_at.rename(columns={'REGIÓN':'REGION',
                                   'COSTO-TRAMO I':'COSTO',
@@ -52,7 +52,7 @@ df_at=df_consolidado_at[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MIN
                          'PROGRAMADO POR EL PLIEGO REGIONAL','TRANSFERENCIA POR DS 187-2021']]
 
 # E) Base de Beneficios Sociales
-df_consolidado_bf = pd.read_excel(here() / 'input\CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
+df_consolidado_bf = pd.read_excel(here() / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
 df_consolidado_bf.fillna(0,inplace = True)
 df_consolidado_bf['COSTO BENEFICIARIOS 2020 Y 2021'] = df_consolidado_bf['LISTAS-2021'] + df_consolidado_bf['TRAMO I-BS 2020'] + df_consolidado_bf['TRAMO II-BS 2021']
 df_consolidado_bf.rename(columns={'REGIÓN':'REGION',
@@ -65,7 +65,7 @@ df_bs = df_consolidado_bf[['REGION','UNIDAD EJECUTORA','COSTO BENEFICIARIOS 2020
                            'TRANSFERENCIA POR DS 072-2021 (BENEFICIARIOS 2020)',
                            'TRANSFERENCIA POR DS 256-2021 (BENEFICIARIOS 2021)']]
 
-df_transferencia = pd.read_excel(here() / 'input\TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
+df_transferencia = pd.read_excel(here() / 'input/TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
 df_transferencia.fillna(0,inplace = True)
 df_transferencia = clean_names(df_transferencia)
 df_transferencia = df_transferencia[['region', 'norma_de_transferencia', 'concepto', 'monto_transferido']].\

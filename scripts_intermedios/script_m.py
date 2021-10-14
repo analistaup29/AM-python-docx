@@ -54,6 +54,7 @@ data_mascarillas["PIM"]=data_mascarillas["pim"]
 data_mascarillas["CERT. (%)"]=data_mascarillas["certificado"]/data_mascarillas["pim"]
 data_mascarillas["COMPRO. (%)"]=data_mascarillas["comprometido_anual"]/data_mascarillas["pim"]
 data_mascarillas["DEVENGADO (%)"]=data_mascarillas["devengado"]/data_mascarillas["pim"]
+
 # C) Compromisos de desempeño
 
 ## Cargamos data de compromisos de desempeño
