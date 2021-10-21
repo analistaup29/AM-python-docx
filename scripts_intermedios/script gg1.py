@@ -263,7 +263,7 @@ for region in lista_regiones:
     run.add_break()
     title.add_run(datetime.today().strftime('%d-%m-%y'))
     
-    # Incluimos sección 1 de intervenciones pedagógicas
+    # Incluimos sección 1 conceptos remunerativos
     document.add_heading("Sobre el financiamiento de conceptos remunerativos", level=1)
     run.underline = True
     document.add_heading("1.Pago de Encargaturas", level=1)

@@ -5,6 +5,7 @@ Created on Tue Sep 21 15:54:48 2021
 """
 import docx
 import pandas as pd
+import numpy as np
 import nums_from_string
 import os
 from datetime import datetime
@@ -13,12 +14,16 @@ from janitor import clean_names # pip install pyjanitor
 from pathlib import Path
 from docx.shared import Pt
 
+
 ###############################################################################
 # Fechas de corte #
 ###############################################################################
 
 # Importamos los nombres de los archivos en la carpeta input
 lista_archivos = os.listdir(Path(here() / "input"))
+
+# Fecha de hoy
+fecha_actual = datetime.today().strftime('%d-%m-%y')
 
 ## A) Base disponibilidad
 # Nos quedamos con el nombre de archivo para la base de disponibilidad
@@ -29,6 +34,7 @@ fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_co
 fecha_corte_disponibilidad = ''.join(fecha_corte_disponibilidad) 
 # Convertimos a formato numérico
 fecha_corte_disponibilidad_date = datetime.strptime(fecha_corte_disponibilidad, '%Y%m%d').date()
+mes_disponibilidad = fecha_corte_disponibilidad_date.month
 # Damos estilo
 fecha_corte_disponibilidad_date = fecha_corte_disponibilidad_date.strftime("%d %b %Y")
 
@@ -62,25 +68,44 @@ nombre_regiones = pd.read_excel(here() / "input/nombre_regiones.xlsx")
 data_intervenciones = pd.read_excel(here() / f"input/Disponibilidad_Presupuestal_{fecha_corte_disponibilidad}interv.xlsx")
 data_intervenciones = clean_names(data_intervenciones) # Normalizamos nombres
 
-# Generamos número de intervenciones
-#numero_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_certificado_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"]]. \
-#   groupby(by = ["region", "intervencion_pedagogica"] , as_index=False).sum()
+# Eliminamos filas de "No hay Intervenciones pedagogicas"
+data_intervenciones = data_intervenciones[data_intervenciones['intervencion_pedagogica'] != "No hay Intervenciones Pedagógicas"]
+# Eliminamos COAR
+data_intervenciones = data_intervenciones[data_intervenciones['intervencion_pedagogica'] != "COAR"]
+# Eliminamos  Vacaciones Truncas y COAR
+data_intervenciones = data_intervenciones[data_intervenciones['especifica_de_gasto'] != "3.2.8.1.5. VACACIONES TRUNCAS DE C.A.S."]
 
 # Mantenemos variables de interés (PIM, DEVENGADO, COMPROMETIDO CERTIFICADO) y 
 # colapsamos a nivel de Region, Intervencion Pedagogica y Cas-No-Cas
-data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_certificado_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"]]. \
+data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre"]]. \
    groupby(by = ["region", "cas_no_cas", "intervencion_pedagogica"] , as_index=False).sum()
 
-# Eliminamos filas de "No hay Intervenciones pedagogicas"
-data_intervenciones = data_intervenciones[data_intervenciones['intervencion_pedagogica'] != "No hay Intervenciones Pedagógicas"]
+# Eliminamos filas con 0 PIM
+condicion_elim = (data_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"] != 0) 
+data_intervenciones = data_intervenciones[condicion_elim]
+
+# Calculamos porcentajes
+## Avance PIM
+data_intervenciones["avance_pim"] = data_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"]/data_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"]
+
+## Avance costo actual
+data_intervenciones["costo_actual"] = data_intervenciones["costo_enero"] + data_intervenciones["costo_febrero"] + data_intervenciones["costo_marzo"] + data_intervenciones["costo_abril"] + data_intervenciones["costo_mayo"] + data_intervenciones["costo_junio"] + data_intervenciones["costo_julio"] + data_intervenciones["costo_agosto"] + data_intervenciones["costo_septiembre"] + data_intervenciones["costo_octubre"]
+data_intervenciones["avance_costo"] = data_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"]/data_intervenciones["costo_actual"]
+
+# Mantenemos y ordenamos columnas
+data_intervenciones = data_intervenciones[['region','cas_no_cas', "intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "avance_pim", "costo_actual", "avance_costo"]]
+
+## Reemplazamos inf por NaN
+data_intervenciones.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+## Reemplazamos NaN por 0
+data_intervenciones['avance_pim'] = data_intervenciones['avance_pim'].fillna("0").astype(float)
+data_intervenciones['avance_costo'] = data_intervenciones['avance_costo'].fillna("0").astype(float)
 
 # Tabla intervenciones CAS
 data_intervenciones_cas = data_intervenciones[data_intervenciones['cas_no_cas'] != "NO CAS"]
 # Tabla intervenciones NO CAS
 data_intervenciones_nocas = data_intervenciones[data_intervenciones['cas_no_cas'] != "CAS"]
-
-# Cálculo del número de intervenciones
-numero_intervenciones = "8" 
 
 #######################
 # Siaf de mascarillas #
@@ -133,20 +158,22 @@ data_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "gen
 # C) Base de Encargaturas
 df_consolidado_enc = pd.read_excel(here() / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'ENC-CONSOLIDADO-VF') 
 df_consolidado_enc.fillna(0, inplace =  True)
-df_consolidado_enc['COSTO'] = df_consolidado_enc['COSTO-TRAMO I'] + df_consolidado_enc['COSTO-TRAMO2']
+df_consolidado_enc['COSTO'] = df_consolidado_enc['COSTO-TRAMO I']
 df_consolidado_enc['PROGRAMADO POR MINEDU'] = df_consolidado_enc['APM2021'] + df_consolidado_enc['INCREMENTOS']+ df_consolidado_enc['NM ENCARGATURAS']
 df_consolidado_enc.rename(columns={'DIPLOMA_GORE':'PROGRAMADO POR EL PLIEGO REGIONAL',
-                                   'TRANSFERENCIA DS 217':'TRANSFERENCIAPOR DS 217-2021',
+                                   'TRANSFERENCIA DS 217':'TRANSFERENCIA POR DS N° 217-2021-EF',
                                    'UNIDADEJECUTORA':'UNIDAD EJECUTORA'},inplace=True)
 df_consolidado_enc['APMeINCREMENTOS'] = df_consolidado_enc['APM2021'] + df_consolidado_enc['INCREMENTOS']
 
 tabla_encargaturas = df_consolidado_enc[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MINEDU',
-                                         'PROGRAMADO POR EL PLIEGO REGIONAL', 'TRANSFERENCIAPOR DS 217-2021',
+                                         'PROGRAMADO POR EL PLIEGO REGIONAL', 'TRANSFERENCIA POR DS N° 217-2021-EF',
                                          'APMeINCREMENTOS','NM ENCARGATURAS']]
 
 tabla_encargaturas_resumen = df_consolidado_enc[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MINEDU',
-                                         'PROGRAMADO POR EL PLIEGO REGIONAL', 'TRANSFERENCIAPOR DS 217-2021',
+                                         'PROGRAMADO POR EL PLIEGO REGIONAL', 'TRANSFERENCIA POR DS N° 217-2021-EF',
                                          'APMeINCREMENTOS','NM ENCARGATURAS']]
+
+
 
 # D) Base de Asignaciones Temporales
 df_consolidado_at = pd.read_excel(here() / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
@@ -155,24 +182,24 @@ df_consolidado_at.rename(columns={'REGIÓN':'REGION',
                                   'COSTO-TRAMO I':'COSTO',
                                   'APM':'PROGRAMADO POR MINEDU',
                                   'DIPLOMA_GORE':'PROGRAMADO POR EL PLIEGO REGIONAL',
-                                  'TRANSFERENCIA DS 187':'TRANSFERENCIA POR DS 187-2021'
+                                  'TRANSFERENCIA DS 187':'TRANSFERENCIA POR DS N° 187-2021-EF'
     },inplace=True)
-df_at=df_consolidado_at[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MINEDU',
-                         'PROGRAMADO POR EL PLIEGO REGIONAL','TRANSFERENCIA POR DS 187-2021']]
+df_at=df_consolidado_at[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MINEDU','TRANSFERENCIA POR DS N° 187-2021-EF']]
 
 # E) Base de Beneficios Sociales
 df_consolidado_bf = pd.read_excel(here() / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
 df_consolidado_bf.fillna(0,inplace = True)
 df_consolidado_bf['COSTO BENEFICIARIOS 2020 Y 2021'] = df_consolidado_bf['LISTAS-2021'] + df_consolidado_bf['TRAMO I-BS 2020'] + df_consolidado_bf['TRAMO II-BS 2021']
 df_consolidado_bf.rename(columns={'REGIÓN':'REGION',
-                                  'APM':'PROGRAMADO POR MINEDU (BENEFICIARIOS 2021)',
-                                  'TRANSFERENCIA DS 072-BS 2020':'TRANSFERENCIA POR DS 072-2021 (BENEFICIARIOS 2020)',
-                                  'TRANSFERENCIA DS 256-BS 2021':'TRANSFERENCIA POR DS 256-2021 (BENEFICIARIOS 2021)'
+                                  'COSTO BENEFICIARIOS 2020 Y 2021':'COSTO',
+                                  'APM':'PROGRAMADO POR MINEDU',
+                                  'TRANSFERENCIA DS 072-BS 2020':'TRANSFERENCIA POR DS N° 072-2021-EF',
+                                  'TRANSFERENCIA DS 256-BS 2021':'TRANSFERENCIA POR DS N° 256-2021-EF'
     },inplace=True)
-df_bs = df_consolidado_bf[['REGION','UNIDAD EJECUTORA','COSTO BENEFICIARIOS 2020 Y 2021',
-                           'PROGRAMADO POR MINEDU (BENEFICIARIOS 2021)',
-                           'TRANSFERENCIA POR DS 072-2021 (BENEFICIARIOS 2020)',
-                           'TRANSFERENCIA POR DS 256-2021 (BENEFICIARIOS 2021)']]
+df_bs = df_consolidado_bf[['REGION','UNIDAD EJECUTORA','COSTO',
+                           'PROGRAMADO POR MINEDU',
+                           'TRANSFERENCIA POR DS N° 072-2021-EF',
+                           'TRANSFERENCIA POR DS N° 256-2021-EF']]
 
 df_transferencia = pd.read_excel(here() / 'input/TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
 df_transferencia.fillna(0,inplace = True)
@@ -192,16 +219,40 @@ df_transferencia["concepto"].replace({"CONTRATACIÓN MINDEF": "Contratación de 
 # Sobre el proceso de racionalización #
 ######################################################
 
-#----------------------------------------------------------------------#
-## Creación plazas docentes
 data_creacion = pd.read_excel(here() / "input/Creacion 2021.xlsx", sheet_name="BD",  skiprows = 2)
 data_creacion = clean_names(data_creacion) # Normalizamos nombres
-data_creacion = data_creacion[['d_region', 'd_dreugel', 'creacion_total']].\
-groupby(by = ["d_region", 'd_dreugel'] , as_index=False).sum()
+data_creacion = data_creacion[['d_region', 'd_dreugel', 'nivel', 'creacion_total']].\
+groupby(by = ["d_region", 'd_dreugel', 'nivel'] , as_index=False).sum()
 data_creacion['d_region'] = data_creacion['d_region'].str.split(r'DRE ').str[-1]
+data_creacion.loc[data_creacion['d_region']=="DE DIOS", 'd_region'] = "MADRE DE DIOS"
+
+
 data_creacion = data_creacion.rename(columns={'d_region':'region', 'd_dreugel':'ugel'})
+data_creacion.loc[data_creacion['nivel']=="inicial", 'inicial'] = data_creacion['creacion_total']
+data_creacion.loc[data_creacion['nivel']=="primaria", 'primaria'] = data_creacion['creacion_total']
+data_creacion.loc[data_creacion['nivel']=="secundaria", 'secundaria'] = data_creacion['creacion_total']
+
+data_creacion = data_creacion[['region', 'ugel','inicial', 'primaria', 'secundaria', 'creacion_total']].\
+groupby(by = ["region", 'ugel'] , as_index=False).sum()
+
 data_creacion.fillna(0, inplace =  True)
 
+## Creación plazas docentes -PEM 2021
+
+data_creacion_pem = pd.read_excel(here() / "input/Creacion PEM 2021.xlsx")
+data_creacion_pem = clean_names(data_creacion_pem) # Normalizamos nombres
+data_creacion_pem = data_creacion_pem[['d_region', 'd_dreugel', 'modalidad', 'req_doc', 'req_bolsa', 'req_director', 'req_subdir']].\
+groupby(by = ["d_region", 'd_dreugel', 'modalidad'] , as_index=False).sum()
+data_creacion_pem['d_region'] = data_creacion_pem['d_region'].str.split(r'DRE ').str[-1]
+data_creacion_pem.loc[data_creacion_pem['d_region']=="DE DIOS", 'd_region'] = "MADRE DE DIOS"
+
+data_creacion_pem = data_creacion_pem.rename(columns={'d_region':'region', 'd_dreugel':'ugel'})
+data_creacion_pem.fillna(0, inplace =  True)
+
+filtro_ebr = data_creacion_pem['modalidad']=="EBR"
+creacion_ebr_pem = data_creacion_pem[filtro_ebr]
+filtro_ebe = data_creacion_pem['modalidad']=="EBE"
+creacion_ebe_pem = data_creacion_pem[filtro_ebe]
 
 #----------------------------------------------------------------------#
 ## Brecha de plazas docentes
@@ -247,13 +298,12 @@ data_bloqueo = data_bloqueo.rename(columns={'descreg':'region'})
 data_deuda_social = pd.read_excel(here() / "input/Deudas sociales.xlsx")
 data_deuda_social = clean_names(data_deuda_social) # Normalizamos nombres
 
-
 ###############################################################################
-# Creación del documento en docx #
+# Creación del documento en docx 
 ###############################################################################
 
 # Generamos la lista de Regiones
-lista_regiones = ["AMAZONAS", "TACNA", "AREQUIPA"]
+lista_regiones = ["AMAZONAS", "ANCASH", "APURIMAC", "AREQUIPA", "AYACUCHO", "CAJAMARCA", "CUSCO", "HUANCAVELICA", "HUANUCO", "ICA", "JUNIN", "LA LIBERTAD", "LAMBAYEQUE", "LORETO", "MADRE DE DIOS", "MOQUEGUA", "PASCO", "PIURA", "PUNO", "SAN MARTIN", "TACNA", "TUMBES", "UCAYALI", "LIMA PROVINCIAS", "CALLAO"]
 
 # For loop para cada región
 for region in lista_regiones:
@@ -271,24 +321,65 @@ for region in lista_regiones:
     tabla_intervenciones = data_intervenciones[region_seleccionada]    
     pim_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
     ejecucion_intervenciones_region = str('{:,.0f}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
+    porcentaje_ejecucion = str('{:,.1%}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
+    porcentaje_costomesactual = str('{:,.1%}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones["costo_actual"].sum()))
     
-    # Generamos número de intervenciones
-    #region_seleccionada = numero_intervenciones['region'] == region #Seleccionar region
-    #n_intervenciones = numero_intervenciones[region_seleccionada] 
-    #n_intervenciones_region = str('{:,.0f}'.format(n_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].count()))
-    # Generamos la tabla con formato
+    # CAS
     tabla_intervenciones_formato_cas = data_intervenciones_cas[region_seleccionada]
+    
+    # Generamos porcentaje de avance CAS
+    porcentaje_ejecucion_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
+    porcentaje_costomesactual_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas["costo_actual"].sum()
+    
+    # Generamos fila total
+    total_int_cas = tabla_intervenciones_formato_cas.groupby(by = ["region"], as_index=False).sum()
+    
+    # Realizamos append del total en la tabla
+    tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.append(total_int_cas, ignore_index=True)
+    
+    # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
+    tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_cas
+    tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_cas
+    
+    #Incluimos palabra "total" y "-" en vez de NaN
+    tabla_intervenciones_formato_cas['intervencion_pedagogica'] = tabla_intervenciones_formato_cas['intervencion_pedagogica'].fillna("Total")
+    tabla_intervenciones_formato_cas['avance_pim'] = tabla_intervenciones_formato_cas['avance_pim'].fillna("0").astype(float)
+    tabla_intervenciones_formato_cas['avance_costo'] = tabla_intervenciones_formato_cas['avance_costo'].fillna("0").astype(float)
+    
+    # NO CAS
     tabla_intervenciones_formato_nocas = data_intervenciones_nocas[region_seleccionada]
+    
+    # Generamos porcentaje de avance NO CAS
+    porcentaje_ejecucion_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
+    porcentaje_costomesactual_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas["costo_actual"].sum()
+    
+    # Generamos fila total
+    total_int_nocas = tabla_intervenciones_formato_nocas.groupby(by = ["region"], as_index=False).sum()
+    # Realizamos append del total en la tabla
+    tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.append(total_int_nocas, ignore_index=True)
+    
+    # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
+    tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_nocas
+    tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_nocas
+    
+    #Incluimos palabra "total" y "-" en vez de NaN
+    tabla_intervenciones_formato_nocas['intervencion_pedagogica'] = tabla_intervenciones_formato_nocas['intervencion_pedagogica'].fillna("Total")
+    tabla_intervenciones_formato_nocas['avance_pim'] = tabla_intervenciones_formato_nocas['avance_pim'].fillna("0").astype(float)
+    tabla_intervenciones_formato_nocas['avance_costo'] = tabla_intervenciones_formato_nocas['avance_costo'].fillna("0").astype(float)
+    
     # Formato para la tabla
     formato_tabla_intervenciones = {
         "intervencion_pedagogica" : "{}",
         f"pim_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
-        f"presupuesto_certificado_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
         f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
-        f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
+        f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
+        "avance_pim": "{:,.1%}",
+        "costo_actual": "{:,.0f}",
+        "avance_costo": "{:,.1%}",
         }
     tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
     tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
+
     
     ############################################
     # Tablas e indicadores mascarillas #
@@ -359,14 +450,25 @@ for region in lista_regiones:
     apmeincre = str('{:,.0f}'.format(tabla1["APMeINCREMENTOS"].sum()))
     prog_gore = str('{:,.0f}'.format(tabla1["PROGRAMADO POR EL PLIEGO REGIONAL"].sum()))
     nm_enca = str('{:,.0f}'.format(tabla1['NM ENCARGATURAS'].sum()))
-    ds_217 = str('{:,.0f}'.format(tabla1['TRANSFERENCIAPOR DS 217-2021'].sum()))
+    ds_217 = str('{:,.0f}'.format(tabla1['TRANSFERENCIA POR DS N° 217-2021-EF'].sum()))
     
     tabla_encargaturas_resumen = tabla1.groupby(['UNIDAD EJECUTORA'], as_index=False).sum()
     tabla_encargaturas_resumen = tabla_encargaturas_resumen[['UNIDAD EJECUTORA',
                                                              'COSTO', 
                                                              'PROGRAMADO POR MINEDU', 
                                                              'PROGRAMADO POR EL PLIEGO REGIONAL',
-                                                             'TRANSFERENCIAPOR DS 217-2021']] 
+                                                             'TRANSFERENCIA POR DS N° 217-2021-EF']] 
+    
+    # Generamos fila total
+    total_enc = tabla_encargaturas_resumen[["UNIDAD EJECUTORA", "COSTO", \
+"PROGRAMADO POR MINEDU", "PROGRAMADO POR EL PLIEGO REGIONAL", "TRANSFERENCIA POR DS N° 217-2021-EF"]].sum()
+    
+    # Realizamos append del total en la tabla
+    tabla_encargaturas_resumen = tabla_encargaturas_resumen.append(total_enc, ignore_index=True)
+    
+    #Incluimos palabra "total"
+    tabla_encargaturas_resumen.iloc[-1, tabla_encargaturas_resumen.columns.get_loc('UNIDAD EJECUTORA')] = "Total"
+
     tabla_encargaturas_resumen = tabla_encargaturas_resumen.round(2)
 
     ###################################
@@ -377,9 +479,19 @@ for region in lista_regiones:
     tabla2 = df_at[region_seleccionada]
     costo_at = str('{:,.0f}'.format(tabla2["COSTO"].sum()))
     apm_at = str('{:,.0f}'.format(tabla2["PROGRAMADO POR MINEDU"].sum())) 
-    diploma_gore_at = str('{:,.0f}'.format(tabla2["PROGRAMADO POR EL PLIEGO REGIONAL"].sum())) 
-    ds_187_at = str('{:,.0f}'.format(tabla2["TRANSFERENCIA POR DS 187-2021"].sum())) 
+    ds_187_at = str('{:,.0f}'.format(tabla2["TRANSFERENCIA POR DS N° 187-2021-EF"].sum())) 
     tabla_at_resumen = tabla2.groupby(['UNIDAD EJECUTORA'], as_index=False).sum() 
+    
+    # Generamos fila total
+    total_at = tabla_at_resumen[["UNIDAD EJECUTORA", "COSTO", \
+"PROGRAMADO POR MINEDU", "TRANSFERENCIA POR DS N° 187-2021-EF"]].sum()
+    
+    # Realizamos append del total en la tabla
+    tabla_at_resumen = tabla_at_resumen.append(total_at, ignore_index=True)
+    
+    #Incluimos palabra "total"
+    tabla_at_resumen.iloc[-1, tabla_at_resumen.columns.get_loc('UNIDAD EJECUTORA')] = "Total"
+
     tabla_at_resumen = tabla_at_resumen.round(2)
 
     ###################################
@@ -387,13 +499,28 @@ for region in lista_regiones:
     ###################################
     
     region_seleccionada = df_bs['REGION'] == region
+    region_seleccionada2 = df_consolidado_bf['REGION'] == region
     tabla3 = df_bs[region_seleccionada]
-    costo_bs = str('{:,.0f}'.format(tabla3["COSTO BENEFICIARIOS 2020 Y 2021"].sum()))
-    apm_bs = str('{:,.0f}'.format(tabla3["PROGRAMADO POR MINEDU (BENEFICIARIOS 2021)"].sum()))    
-    ds_72_bs = str('{:,.0f}'.format(tabla3["TRANSFERENCIA POR DS 072-2021 (BENEFICIARIOS 2020)"].sum())) 
-    ds_256_bs = str('{:,.0f}'.format(tabla3["TRANSFERENCIA POR DS 256-2021 (BENEFICIARIOS 2021)"].sum()))
+    tabla3_2 = df_consolidado_bf[region_seleccionada]
+    costo_bs = str('{:,.0f}'.format(tabla3["COSTO"].sum()))
+    apm_bs = str('{:,.0f}'.format(tabla3["PROGRAMADO POR MINEDU"].sum()))    
+    ds_72_bs = str('{:,.0f}'.format(tabla3["TRANSFERENCIA POR DS N° 072-2021-EF"].sum())) 
+    ds_256_bs = str('{:,.0f}'.format(tabla3["TRANSFERENCIA POR DS N° 256-2021-EF"].sum()))
     tabla_bs_resumen = tabla3.groupby(['UNIDAD EJECUTORA'], as_index=False).sum()
-    tabla_bs_resumen = tabla_bs_resumen.round(2)   
+
+    # Generamos fila total
+    total_bs = tabla_bs_resumen[["UNIDAD EJECUTORA", "COSTO", \
+"PROGRAMADO POR MINEDU", "TRANSFERENCIA POR DS N° 072-2021-EF", "TRANSFERENCIA POR DS N° 256-2021-EF"]].sum()
+
+    # Realizamos append del total en la tabla
+    tabla_bs_resumen = tabla_bs_resumen.append(total_bs, ignore_index=True)
+    
+    #Incluimos palabra "total"
+    tabla_bs_resumen.iloc[-1, tabla_bs_resumen.columns.get_loc('UNIDAD EJECUTORA')] = "Total"
+
+    tabla_bs_resumen = tabla_bs_resumen.round(2)
+    
+    lista_bf = str('{:,.0f}'.format(tabla3_2["LISTAS-2021"].sum()))
     
     ###########################################################################
     # Inclusión del texto del documento #
@@ -410,9 +537,13 @@ for region in lista_regiones:
     # Incluimos sección 1 de intervenciones pedagógicas #
     #####################################################
     
-    document.add_heading("1. Intervenciones pedagógicas", level=1) # 1) Intervenciones pedagógicas
-    interv_fecha_actualizacion = document.add_paragraph("   Actualizado al ")
-    interv_fecha_actualizacion.add_run(fecha_corte_disponibilidad_date)
+    document.add_heading("1. Intervenciones pedagógicas", level=1) # 1) Intervenciones pedagógicas    
+    interv_fecha_actualizacion = document.add_paragraph()
+    interv_fecha_negrita1 = interv_fecha_actualizacion.add_run("Actualizado al ")
+    interv_fecha_negrita2 = interv_fecha_actualizacion.add_run(fecha_corte_disponibilidad_date)
+    interv_fecha_negrita1.bold = True    
+    interv_fecha_negrita2.bold = True
+    
     interv_parrafo1 = document.add_paragraph(
     "Las Unidades Ejecutoras de Educación de la región " , style="List Bullet")
     interv_parrafo1.add_run(region)
@@ -441,10 +572,11 @@ for region in lista_regiones:
     # Incluimos tabla 1 intervenciones CAS
     cas_titulo = document.add_paragraph()
     cas_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
-    cas_tit2 = cas_titulo.add_run("Intervenciones Pedagógicas - Componente CAS (soles)")
-    cas_tit2.bold = True    
+    cas_titulo_negrita = cas_titulo.add_run("Intervenciones Pedagógicas - Componente CAS (soles)")
+    cas_titulo_negrita.bold = True    
     tabla1_interv = document.add_table(tabla_intervenciones_formato_cas.shape[0]+1, tabla_intervenciones_formato_cas.shape[1])
-    #tabla1_interv.allow_autofit
+    tabla1_interv.autofit = False
+    tabla1_interv.allow_autofit = True
     tabla1_interv.style = "formato_tabla_minedu"
     nocas_titulo = document.add_paragraph()
     nocas_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
@@ -456,11 +588,13 @@ for region in lista_regiones:
     
     ## Header de la tabla
     row = tabla1_interv.rows[0].cells
-    row[0].text = "Intervencion Pedagogica"
+    row[0].text = "INTERVENCIONES"
     row[1].text = "PIM"
-    row[2].text = "Certificado"
-    row[3].text = "Comprometido"
-    row[4].text = "Devengado"
+    row[2].text = "COMP."
+    row[3].text = "DEV."
+    row[4].text = "% DEV"
+    row[5].text = "COSTO AL MES"
+    row[6].text = "% DEV COSTO AL MES"
     ## Contenido de la tabla
     for i in range(tabla_intervenciones_formato_cas.shape[0]):
         for j in range(tabla_intervenciones_formato_cas.shape[-1]):
@@ -468,11 +602,13 @@ for region in lista_regiones:
         
     ## Header de la tabla
     row = tabla2_interv.rows[0].cells
-    row[0].text = "Intervencion Pedagogica"
+    row[0].text = "INTERVENCIONES"
     row[1].text = "PIM"
-    row[2].text = "Certificado"
-    row[3].text = "Comprometido"
-    row[4].text = "Devengado"    
+    row[2].text = "COMP."
+    row[3].text = "DEV."
+    row[4].text = "% DEV"
+    row[5].text = "COSTO AL MES"
+    row[6].text = "% DEV COSTO AL MES"
     for i in range(tabla_intervenciones_formato_nocas.shape[0]):
         for j in range(tabla_intervenciones_formato_nocas.shape[-1]):
             tabla2_interv.cell(i+1,j).text = str(tabla_intervenciones_formato_nocas.values[i,j])
@@ -496,8 +632,12 @@ for region in lista_regiones:
     # Incluimos sección 2 Mascarillas y protectores faciales #
     ###########################################################
     document.add_heading("2. Mascarillas y protectores faciales", level=1)
-    mascarillas_fecha_actualizacion = document.add_paragraph("   Actualizado al ")
-    mascarillas_fecha_actualizacion.add_run(fecha_corte_mascarillas)
+    mascarillas_fecha_actualizacion = document.add_paragraph()
+    mascarillas_fecha_negrita1 = mascarillas_fecha_actualizacion.add_run("Actualizado al ")
+    mascarillas_fecha_negrita2 = mascarillas_fecha_actualizacion.add_run(fecha_corte_mascarillas)
+    mascarillas_fecha_negrita1.bold = True    
+    mascarillas_fecha_negrita2.bold = True
+    
     mascarillas_parrafo1 = document.add_paragraph(
     "Mediante el Decreto de Urgencia N° 021-2021 y la Resolución de Secretaría \
 General N° 047-2021-MINEDU, se transfirieron S/ ", style="List Bullet")
@@ -549,21 +689,21 @@ textiles protectores faciales fue del ")
     for i in range(tabla_mascarillas_formato.shape[0]):
         for j in range(tabla_mascarillas_formato.shape[-1]):
             tabla1_mascarillas.cell(i+1,j).text = str(tabla_mascarillas_formato.values[i,j])
-    mascarillas_parrafo4 = document.add_paragraph("*Recursos transferidos mediante el Decreto de Urgencia N° 021-2021.")
-    mascarillas_parrafo4_fuente=mascarillas_parrafo4.add_run().font 
-    mascarillas_parrafo4_fuente.size=Pt(8) # revisar no cambia el tamaño de fuente
-    mascarillas_parrafo5 = document.add_paragraph("Fuente: SIAF MPP al 03 de octubre de 2021.")
-    mascarillas_parrafo5_fuente=mascarillas_parrafo4.add_run().font
-    mascarillas_parrafo5_fuente.size=Pt(8) # revisar no cambia el tamaño de fuente
+
+    mascarillas_parrafo4 = document.add_paragraph().add_run("Notas: Recursos transferidos mediante el Decreto de Urgencia N° 021-2021. Fuente: SIAF MPP al 03 de octubre de 2021.")
+    mascarillas_parrafo4.font.size = Pt(7)
     
     ################################################
     # Incluimos sección 3 Compromisos de desempeño #
     ################################################
 
     document.add_heading("3. Compromisos de desempeño", level=1)
-    cdd_fecha_actualizacion = document.add_paragraph("   Actualizado al ")
-    cdd_fecha_actualizacion.add_run(fecha_corte_compromisos)
-
+    cdd_fecha_actualizacion = document.add_paragraph()
+    cdd_fecha_negrita1 = cdd_fecha_actualizacion.add_run("Actualizado al ")
+    cdd_fecha_negrita2 = cdd_fecha_actualizacion.add_run(fecha_corte_compromisos)
+    cdd_fecha_negrita1.bold = True    
+    cdd_fecha_negrita2.bold = True
+    
     cdd_parrafo1 = document.add_paragraph(
         "En el marco de la Norma Técnica para la implementación del mecanismo \
 denominado Compromisos de Desempeño 2021, aprobada por Resolución Ministerial \
@@ -577,9 +717,11 @@ Educación del Gobierno Regional de ", style="List Bullet")
     # Incluimos tabla de CDD
     cdd_titulo = document.add_paragraph()
     cdd_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
-    cdd_tit = cas_titulo.add_run("Transferencias de compromisos de desempeño")
+    cdd_tit = cdd_titulo.add_run("Transferencias de compromisos de desempeño")
     cdd_tit.bold = True        
     tabla1_cdd = document.add_table(tabla_cdd_formato.shape[0]+1, tabla_cdd_formato.shape[1])
+    tabla1_cdd.autofit = True
+    tabla1_cdd.allow_autofit = True
     tabla1_cdd.style = "formato_tabla_minedu"
     # Header de la tabla
     row = tabla1_cdd.rows[0].cells
@@ -598,10 +740,10 @@ Educación del Gobierno Regional de ", style="List Bullet")
     # Incluimos sección 4 financiamiento de conceptos remunerativos #
     #################################################################
             
-    # Incluimos sección 4 financiamiento de conceptos remunerativos
+    # Incluimos sección 1 conceptos remunerativos
     document.add_heading("Sobre el financiamiento de conceptos remunerativos", level=1)
     run.underline = True
-    document.add_heading("4.Pago de Encargaturas", level=1)
+    document.add_heading("1.Pago de Encargaturas", level=1)
     
     ##Párrafos
     encarg_parrafo1 = document.add_paragraph(
@@ -612,7 +754,7 @@ Educación del Gobierno Regional de ", style="List Bullet")
     encarg_parrafo1.add_run(' un costo de S/.')
     encarg_parrafo1.add_run(f'{costo_enc}') #Insertar valor de base de datos
     encarg_parrafo1.add_run(
-    ' que incluye la Jornada de Trabajo Adicional de 10 horas \
+    ' que incluye la Jornada de Trabajo Adicional de 10 horas, \
 la carga social vinculada y la asignación por cargo de \
 los profesores que asumen cargos de mayor responsabilidad \
 mediante encargaturas')
@@ -639,7 +781,7 @@ ya contaba con una programación de ')
     encarg_parrafo2.add_run(' en la misma finalidad y mediante ')
     encarg_parrafo2.add_run(' Oficio Múltiple N° 00082-2021-MINEDU/SPE-OPEP-UPP, ')
     encarg_parrafo2.add_run('se le solicitó a las Unidades Ejecutoras del Pliego Regional \
-#realizar modificaciones presupuestarias por el monto de S/.')
+realizar modificaciones presupuestarias por el monto de S/.')
     encarg_parrafo2.add_run(f'{nm_enca}') #Insertar valor de base de datos
     encarg_parrafo2.add_run(' para habilitar la finalidad 0267929')
     nota3 = encarg_parrafo2.add_run('[3]')
@@ -648,7 +790,7 @@ ya contaba con una programación de ')
     encarg_parrafo2.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     
     encarg_parrafo3 = document.add_paragraph('Con ')
-    encarg_parrafo3.add_run('Decreto Supremo 217-2021 \
+    encarg_parrafo3.add_run('Decreto Supremo N° 217-2021-EF \
 publicado el 27 de agosto de 2021 en el marco de lo autorizado en el literal b) \
 del numeral 40.1 de la Ley de Presupuesto 2021, se ha realizado una transferencia \
 de partidas por el monto de S/.')  # Este párrafo tendrá que variar año tras año
@@ -660,7 +802,7 @@ de partidas por el monto de S/.')  # Este párrafo tendrá que variar año tras 
 
     encarg_parrafo_add = document.add_paragraph('Actualmente está en gestión \
 en el MINEDU la segunda transferencia de recursos por concepto de encargaturas, \
-el cual debería realizarse antes del 26 de noviembre del 2021 \
+el cual debería aprobarse como máximo el 26 de noviembre del 2021 \
 de acuerdo al plazo legal establecido en la Ley de Presupuesto 2021. ')
 
     encarg_parrafo4 = document.add_paragraph('En el siguiente cuadro se muestran el costo \
@@ -675,9 +817,19 @@ y los montos programados/transferidos a la Región ')
     for i in range(tabla_encargaturas_resumen.shape[0]):
         for j in range(tabla_encargaturas_resumen.shape[-1]):
             tabla_enc.cell(i+1,j).text = str(tabla_encargaturas_resumen.values[i,j])
+    
+    nota_tabla = document.add_paragraph().add_run('Nota: Para el cálculo del monto \
+transferido, se ha tomado en cuenta los recursos programados por el Minedu y \
+las UE del Pliego Regional a nivel de estructura funcional programática (EFP). \
+En casos en los que la necesidad (costo) por EFP haya sido inferior a los \
+programado, se generarían saldos, ocasionando que exista diferencias entre el \
+costo y la suma de los montos transferidos y programados.')    
+
+    nota_tabla.font.size = Pt(7)
+
 
 #----------------------------------------------------------------------------------------------#
-    document.add_heading("5.Pago de Asignaciones Temporales", level=1)
+    document.add_heading("2.Pago de Asignaciones Temporales", level=1)
     
     ##Párrafos
     encarg_parrafo5 = document.add_paragraph('Para la Región ')    
@@ -704,16 +856,11 @@ en el PIA ')
 
     encarg_parrafo6.add_run(' en la finalidad 0267928. Pago de las asignaciones \
 por tipo y ubicacion de Institucion Educativa la cuál es usada para financiar \
-las asignaciones temporales. Asimismo, el Pliego Regional ya contaba con \
-una programación de S/.')    
-    encarg_parrafo6.add_run(f'{diploma_gore_at}') #Insertar valor de base de datos    
-    nota4 = encarg_parrafo6.add_run( '[4]')
-    nota4.font.superscript = True 
-    encarg_parrafo6.add_run(' en la misma finalidad.')
+las asignaciones temporales.')    
 
     encarg_parrafo6.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
   
-    encarg_parrafo7 = document.add_paragraph('Con Decreto Supremo 187-2021 \
+    encarg_parrafo7 = document.add_paragraph('Con Decreto Supremo N° 187-2021-EF \
 publicado el 22 de julio de 2021 en el marco de lo autorizado en los literales \
 a), c), d) y e) del numeral 40.1 de la Ley de Presupuesto 2021, ') # Este párrafo tendrá que variar año tras año
     encarg_parrafo7.add_run('se ha realizado una transferencia \
@@ -728,7 +875,7 @@ temporales a favor los profesores y auxiliares de educación nombrados y contrat
 
     encarg_parrafo8 = document.add_paragraph('Actualmente está en gestión en el MINEDU \
 la segunda transferencia de recursos por concepto de asignaciones temporales, \
-el cual debería realizarse antes del ')
+el cual debería aprobarse como máximo el ')
     encarg_parrafo8.add_run('26 de noviembre del 2021') #Esta fecha se actualizará año a año 
     encarg_parrafo8.add_run(' de acuerdo al plazo legal establecido en la Ley de Presupuesto ') 
     encarg_parrafo8.add_run(datetime.today().strftime('%Y')) #Año actual
@@ -752,7 +899,7 @@ montos programados/transferidos a la Región ')
 
 #----------------------------------------------------------------------------------------------#
 
-    document.add_heading("6.Pago de Beneficios Sociales", level=1)
+    document.add_heading("3.Pago de Beneficios Sociales", level=1)
 
     region_seleccionada = df_transferencia['region'] == region #Seleccionar region
     tabla_transferencia = df_transferencia[region_seleccionada]
@@ -771,13 +918,18 @@ montos programados/transferidos a la Región ')
     ##Párrafos    
     encarg_parrafo10 = document.add_paragraph('Para la Región ')
     encarg_parrafo10.add_run(region)
-    encarg_parrafo10.add_run(', de acuerdo con la nueva estrategia para el pago oportuno \
-de Beneficios Sociales implementada por el MINEDU, se han aprobado pagos por concepto de \
-Asignación por Tiempo de Servicios (ATS), Compensación por Tiempo de Servicios (CTS) y, \
-Subsidio por Luto y Sepelio (SLS) hasta por  un costo de S/ ')
+    encarg_parrafo10.add_run(', por concepto de Beneficios Sociales se ha calculado\
+ un costo total de S/. ')
     encarg_parrafo10.add_run(f'{costo_bs}') #Insertar valor de base de datos    
-    encarg_parrafo10.add_run(' a la fecha , a favor de los profesores y auxiliares de educación \
-nombrados y contratados.')    
+    encarg_parrafo10.add_run(', aque incluye el pago para la Asignación por \
+Tiempo de Servicios (ATS), Compensación por Tiempo de Servicios (CTS) \
+y, Subsidio por Luto y Sepelio (SLS) a favor de los profesores y \
+auxiliares de educación nombrados y contratados. Dentro de estos, \
+de acuerdo con la nueva estrategia para el pago oportuno de Beneficios Sociales \
+implementada por el MINEDU, se han aprobado pagos hasta por un costo de S/. ')
+    encarg_parrafo10.add_run(f'{lista_bf}') #Insertar valor de base de datos    
+    encarg_parrafo10.add_run(' a la fecha')
+    
     encarg_parrafo10.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
     encarg_parrafo11 = document.add_paragraph('Para financiar estos conceptos, el ')
@@ -793,7 +945,7 @@ nombrados y contratados.')
     encarg_parrafo11.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
     encarg_parrafo12 = document.add_paragraph('Con ')
-    encarg_parrafo12.add_run('Decreto Supremo 072-2021 publicado el 21 de abril de 2021')
+    encarg_parrafo12.add_run('Decreto Supremo N° 072-2021-EF publicado el 21 de abril de 2021')
     encarg_parrafo12.add_run(' en el marco de lo autorizado en los literales a), d) y e) \
 del numeral 40.1 de la Ley de Presupuesto ')
     encarg_parrafo12.add_run(datetime.today().strftime('%Y')) #Año actual
@@ -803,15 +955,14 @@ del numeral 40.1 de la Ley de Presupuesto ')
     encarg_parrafo12.add_run(region)
     encarg_parrafo12.add_run(' para financiar el pago de los beneficios sociales a favor los profesores \
 y auxiliares de educación nombrados y contratados que fueron reconocidos hasta el ')   
-    encarg_parrafo12.add_run('2020') #Calcular valor de año anterior
+    encarg_parrafo12.add_run('12 de enero de 2021')
     encarg_parrafo12.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
     encarg_parrafo13 = document.add_paragraph('Asimismo, mediante ')
-    encarg_parrafo13.add_run('Decreto Supremo 256-2021 publicado el 24 de setiembre de 2021, ')  #Esto cambiará cada año
+    encarg_parrafo13.add_run('Decreto Supremo N° 256-2021-EF publicado el 24 de setiembre de 2021, ')  #Esto cambiará cada año
     encarg_parrafo13.add_run(' se realizó la segunda transferencia de recursos por concepto de \
 beneficios sociales a favor de docentes y auxiliares nombrados y contratados, cuyos beneficios fueron \
-reconocidos durante el año ')
-    encarg_parrafo13.add_run(datetime.today().strftime('%Y')) #Año actual
+reconocidos hasta el 4 de junio de 2021 ')
     encarg_parrafo13.add_run(', transfiriéndose S/. ')
     encarg_parrafo13.add_run(f'{ds_256_bs}.') #Insertar valor de base de datos   
     encarg_parrafo13.add_run('  a las Unidades Ejecutoras de Educación de la Región ')
@@ -837,7 +988,7 @@ programados/transferidos a la Región ')
 
     encarg_parrafo15 = document.add_paragraph(' De la misma forma, durante el presente año, para la Región ')  
     encarg_parrafo15.add_run(region)
-    encarg_parrafo15.add_run(' se ha realizado las siguientes transferenciasn')
+    encarg_parrafo15.add_run(' se ha realizado las siguientes transferencias:')
 
     encarg_parrafo15.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     
@@ -865,61 +1016,21 @@ beneficios sociales, entre otros y, el financiamiento restante, se realizará de
     encarg_parrafo16.add_run('2022, ') #Calcular año posterior
     encarg_parrafo16.add_run('preferentemente antes que termine el primer semestre de dicho año fiscal.')    
     encarg_parrafo16.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-    document.save(here() / f'output/{region}_AM_GG1.docx')
 
 #------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------#    
 
+
     # Incluimos sección 2 de Proceso de racionalización
-    region_seleccionada = data_creacion['region'] == region #Seleccionar region
-    tabla_creacion = data_creacion[region_seleccionada]
-    tabla_creacion_formato = data_creacion[region_seleccionada]
-    creacion_region = str('{:,.0f}'.format(tabla_creacion["creacion_total"].sum()))
-    
 
-    formato_tabla_creacion = {
-        "ugel": "{}",
-        "creacion_total" : "{}",
-        }
-    tabla_creacion_formato = tabla_creacion_formato.transform({k: v.format for k, v in formato_tabla_creacion.items()})        
-
-    
     document.add_heading("Sobre el proceso de racionalización", level=1)
-    run.underline = True    
+    run.underline = True  
 
-    document.add_heading("7. Financiamiento de plazas 2021, en el marco del \
-proceso de racionalización 2020", level=1)
-
-    #Párrafo 
-    racio_parrafo1 = document.add_paragraph('A través del ',  style="List Bullet")
-    racio_parrafo1.add_run('DS 078-2021-EF') #Esto cambia año tras año
-    racio_parrafo1.add_run(' se financiaron ') 
-    racio_parrafo1.add_run(creacion_region) #Insertar valor de base de datos 
-    racio_parrafo1.add_run(' plazas de docentes de aula en el marco de los resultados del \
-proceso de racionalización ') 
-    racio_parrafo1.add_run('2020 ') #Calcular valor de año anterior
-    racio_parrafo1.add_run('en servicios educativos públicos de la región ')
-    racio_parrafo1.add_run(region)
-    racio_parrafo1.add_run(' con la siguiente distribución por UGEL:')
-    racio_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-
-    # Incluimos tabla creaciones
-    tabla1_creacion = document.add_table(tabla_creacion_formato.shape[0]+1, tabla_creacion_formato.shape[1])
-    tabla1_creacion.style = "formato_tabla_minedu"
-    ## Header de la tabla
-    row = tabla1_creacion.rows[0].cells
-    row[0].text = "UGEL"
-    row[1].text = "Número de creaciones"
-    ## Contenido de la tabla
-    for i in range(tabla_creacion_formato.shape[0]):
-        for j in range(tabla_creacion_formato.shape[-1]):
-            tabla1_creacion.cell(i+1,j).text = str(tabla_creacion_formato.values[i,j])
-
-    document.add_heading("8. Resultados proceso de racionalización 2020", level=1)
+    document.add_heading("4. Resultados proceso de racionalización 2020", level=1)
  
     region_seleccionada2 = data_brecha['region'] == region #Seleccionar region    
     tabla_brecha = data_brecha[region_seleccionada2]
-
+    
     excedentes_region = str('{:,.0f}'.format(tabla_brecha["doc_e"].sum()))
     requerimientos_region = str('{:,.0f}'.format(tabla_brecha["doc_req"].sum()))
     requerimiento_neto = str('{:,.0f}'.format(tabla_brecha["req_neto"].sum()))
@@ -930,6 +1041,16 @@ proceso de racionalización ')
     ugel_cant_req = str('{:,.0f}'.format(tabla_brecha2["cant_ugel_req"].sum()))
     ugel_cant_exc = str('{:,.0f}'.format(tabla_brecha2["cant_ugel_exc"].sum()))    
     brecha_region = str('{:,.0f}'.format(tabla_brecha2["brecha_net"].sum()))  
+
+    # Generamos fila total
+    total_brecha = tabla_brecha[["region", "doc_req", "doc_e", "doc_e_n_cub_req", "nom_exd_mov1", "doc_e_c", "req_neto", "exc_neto" ]]. \
+    groupby(by = ["region"], as_index=False).sum()
+    
+    # Realizamos append del total en la tabla
+    tabla_brecha = tabla_brecha.append(total_brecha, ignore_index=True)
+    
+    #Incluimos palabra "total" y "-" en vez de NaN
+    tabla_brecha['ugel'] = tabla_brecha['ugel'].fillna("Total")
 
     tabla_brecha_formato = data_brecha[region_seleccionada2]
     
@@ -943,6 +1064,8 @@ proceso de racionalización ')
         "req_neto" : "{:.0f}",
         "exc_neto" : "{:.0f}",
         }
+    
+    tabla_brecha_formato = tabla_brecha
     tabla_brecha_formato = tabla_brecha_formato.transform({k: v.format for k, v in formato_tabla_brecha.items()})
     
     
@@ -1001,19 +1124,179 @@ plazas vacantes ascendente a ')
     racio_parrafo3.add_run(' UGEL. Con ello, se obtuvo ')
       
     if region == "AYACUCHO" or region == "HUANCAVELICA" or region=="PUNO" or region=="TUMBES":       
-        negrita5 = racio_parrafo3.add_run('una excedencia neta a nivel regional igul a ')
+        negrita5 = racio_parrafo3.add_run('una excedencia neta a nivel regional igual a ')
         negrita5.bold= True
         negrita6 = racio_parrafo3.add_run(brecha_region) #Insertar valor de base de datos
         negrita6.bold= True     
         racio_parrafo3.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     else:            
-        negrita5 = racio_parrafo3.add_run('un requerimiento neto a nivel regional igul a ')
+        negrita5 = racio_parrafo3.add_run('un requerimiento neto a nivel regional igual a ')
         negrita5.bold= True
         negrita6 = racio_parrafo3.add_run(brecha_region) #Insertar valor de base de datos
         negrita6.bold= True     
         racio_parrafo3.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
-    document.add_heading("3. Acciones de reordenamiento territorial 2020", level=1)
+    #Creacion proceso de racionalización
+    
+    region_seleccionada = data_creacion['region'] == region #Seleccionar region
+    tabla_creacion = data_creacion[region_seleccionada]
+    creacion_region = str('{:,.0f}'.format(tabla_creacion["creacion_total"].sum()))
+
+    # Generamos fila total
+    total_creacion = tabla_creacion[["region", "inicial", "primaria", "secundaria", "creacion_total"]]. \
+    groupby(by = ["region"], as_index=False).sum()
+    
+    # Realizamos append del total en la tabla
+    tabla_creacion = tabla_creacion.append(total_creacion, ignore_index=True)
+    
+    #Incluimos palabra "total" y "-" en vez de NaN
+    tabla_creacion['ugel'] = tabla_creacion['ugel'].fillna("Total")
+
+    tabla_creacion_formato = data_creacion[region_seleccionada]
+     
+
+    formato_tabla_creacion = {
+        "ugel": "{}",
+        "inicial": "{:.0f}",
+        "primaria": "{:.0f}",
+        "secundaria": "{:.0f}",        
+        "creacion_total" : "{}",
+        }
+    
+    tabla_creacion_formato = tabla_creacion
+    tabla_creacion_formato = tabla_creacion_formato.transform({k: v.format for k, v in formato_tabla_creacion.items()})        
+
+    region_pem = data_creacion_pem['region'] == region #Seleccionar region
+    tabla_creacion_pem = data_creacion_pem[region_pem]
+    pem_docente = str('{:,.0f}'.format(tabla_creacion_pem["req_doc"].sum()))
+    pem_bolsa = str('{:,.0f}'.format(tabla_creacion_pem["req_bolsa"].sum()))
+    pem_director = str('{:,.0f}'.format(tabla_creacion_pem["req_director"].sum()))
+    pem_subdirector = str('{:,.0f}'.format(tabla_creacion_pem["req_subdir"].sum()))  
+
+
+    document.add_heading("5. Financiamiento de plazas 2021", level=1)
+
+    creacion_racio = document.add_paragraph().add_run('En el marco del proceso de racionalizacion 2020')
+
+    creacion_racio.italic = True
+    creacion_racio.bold = True
+
+    #Párrafo creacion
+    racio_parrafo1 = document.add_paragraph('A través del ',  style="List Bullet")
+    racio_parrafo1.add_run('DS N° 078-2021-EF') #Esto cambia año tras año
+    racio_parrafo1.add_run(' se financiaron ') 
+    racio_parrafo1.add_run(creacion_region) #Insertar valor de base de datos 
+    racio_parrafo1.add_run(' plazas de docentes de aula en el marco de los resultados del \
+proceso de racionalización ') 
+    racio_parrafo1.add_run('2020 ') #Calcular valor de año anterior
+    racio_parrafo1.add_run('en servicios educativos públicos de la región ')
+    racio_parrafo1.add_run(region)
+    racio_parrafo1.add_run(' con la siguiente distribución por UGEL:')
+    racio_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
+
+    # Incluimos tabla creaciones
+    creacion_titulo = document.add_paragraph('Número de plazas creadas por UGEL y nivel')
+    creacion_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+
+    tabla1_creacion = document.add_table(tabla_creacion_formato.shape[0]+1, tabla_creacion_formato.shape[1])
+    tabla1_creacion.style = "formato_tabla_minedu"
+    ## Header de la tabla
+    row = tabla1_creacion.rows[0].cells
+    row[0].text = "UGEL"
+    row[1].text = "Inicial"
+    row[2].text = "Primaria"
+    row[3].text = "Secundaria"
+    row[4].text = "Número de creaciones"
+
+    ## Contenido de la tabla
+    for i in range(tabla_creacion_formato.shape[0]):
+        for j in range(tabla_creacion_formato.shape[-1]):
+            tabla1_creacion.cell(i+1,j).text = str(tabla_creacion_formato.values[i,j])
+
+#region == "ANCASH" or region == "APURIMAC"  or region == "AREQUIPA" or region == "AYACUCHO" or region == "CALLAO"  or region == "CUSCO" or region == "ICA"
+
+    #Párrafo creacion PEM
+    if pem_docente!="0" or pem_bolsa!="0" or pem_director!="0" or pem_subdirector!="0":
+        parrafo_espacio_pem = document.add_paragraph('')        
+
+        creacion_pem = document.add_paragraph().add_run('En el marco del Proceso Extraordinario de Matrícula (PEM) 2021')
+        creacion_pem.italic = True
+        creacion_pem.bold = True
+            #Creacion PEM 2021
+
+
+
+
+        # Generamos fila total
+        total_creacion_pem = tabla_creacion_pem[["region", "req_doc", "req_bolsa", "req_director", "req_subdir"]]. \
+            groupby(by = ["region"], as_index=False).sum()
+    
+        # Realizamos append del total en la tabla
+        tabla_creacion_pem = tabla_creacion_pem.append(total_creacion_pem, ignore_index=True)
+    
+        #Incluimos palabra "total" y "-" en vez de NaN
+        tabla_creacion_pem['ugel'] = tabla_creacion_pem['ugel'].fillna("Total")
+        tabla_creacion_pem['modalidad'] = tabla_creacion_pem['modalidad'].fillna("-")
+
+        tabla_creacion_pem_formato = data_creacion_pem[region_pem]
+     
+
+        formato_tabla_creacion_pem = {
+            "ugel": "{}",
+            "modalidad": "{}",
+            "req_doc": "{:.0f}",
+            "req_bolsa": "{:.0f}",
+            "req_director": "{:.0f}",        
+            "req_subdir" : "{}",
+            }
+        
+        tabla_creacion_pem_formato = tabla_creacion_pem
+        tabla_creacion_pem_formato = tabla_creacion_pem_formato.transform({k: v.format for k, v in formato_tabla_creacion_pem.items()})      
+
+        
+        pem_parrafo1 = document.add_paragraph('A través del ',  style="List Bullet")
+        pem_parrafo1.add_run('DS N° 065-2021-EF') #Esto cambia año tras año
+        pem_parrafo1.add_run(' se financiaron ')
+    
+        if pem_docente!="0":
+            pem_parrafo1.add_run(pem_docente) #Insertar valor de base de datos 
+            pem_parrafo1.add_run(' plazas de docentes de aula, ') 
+    
+        if pem_bolsa!="0":
+            pem_parrafo1.add_run(pem_bolsa) #Insertar valor de base de datos 
+            pem_parrafo1.add_run(' horas de bolsa, ') 
+
+        if pem_director!="0":
+            pem_parrafo1.add_run(pem_director) #Insertar valor de base de datos 
+            pem_parrafo1.add_run(' plazas de director, ')         
+
+        if pem_subdirector!="0":
+            pem_parrafo1.add_run(pem_subdirector) #Insertar valor de base de datos 
+            pem_parrafo1.add_run(' plazas de subdirector, ') 
+
+        pem_parrafo1.add_run('el detalle por UGEL y modalidad se muestra en la siguiente tabla')
+
+        # Incluimos tabla creaciones
+        creacion_titulo_pem = document.add_paragraph('Número de plazas creadas por UGEL y modalidad')
+        creacion_titulo_pem.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+
+        tabla2_creacion = document.add_table(tabla_creacion_pem_formato.shape[0]+1, tabla_creacion_pem_formato.shape[1])
+        tabla2_creacion.style = "formato_tabla_minedu"
+        ## Header de la tabla
+        row = tabla2_creacion.rows[0].cells
+        row[0].text = "UGEL"
+        row[1].text = "Modalidad"
+        row[2].text = "Plazas docentes de aula"
+        row[3].text = "Bolsa de horas"
+        row[4].text = "Plazas de director"
+        row[5].text = "Plazas de subdirector"
+
+        ## Contenido de la tabla
+        for i in range(tabla_creacion_pem_formato.shape[0]):
+            for j in range(tabla_creacion_pem_formato.shape[-1]):
+                tabla2_creacion.cell(i+1,j).text = str(tabla_creacion_pem_formato.values[i,j])
+
+    document.add_heading("6. Acciones de reordenamiento territorial 2020", level=1)
  
     #Párrafo
     if region == "AREQUIPA" or region == "AYACUCHO" or region=="CUSCO" or region=="HUANCAVELICA" or region=="PASCO" or region=="PUNO" or region=="TACNA":
@@ -1052,10 +1335,10 @@ plazas vacantes ascendente a ')
         }
     tabla_deuda_social_formato = tabla_deuda_social_formato.transform({k: v.format for k, v in formato_tabla_deuda_social.items()})        
 
-    document.add_heading("9. Sobre Deudas Sociales y Contratación del DL 276", level=1)
+    document.add_heading("Sobre Deudas Sociales y Contratación del DL 276", level=1)
     run.underline = True  
 
-    document.add_heading("Deudas Sociales", level=1)
+    document.add_heading("7. Deudas Sociales", level=1)
 
     #Párrafo
     deuda_parrafo1 = document.add_paragraph(' La Deuda Social del Sector Educación \
@@ -1227,13 +1510,11 @@ enviada al Congreso de la República para su aprobación el 31 de agosto de 2021
 
     document.add_page_break()
 
-
     ##############################################
-    # Incluimos anexo de fechas de actualización #
+    # Incluimos anexo notas y fechas de actualiz #
     ##############################################
-
-    document.add_heading("Anexos", level=1)
     
+    document.add_heading("Anexos", level=1)
     nota1 = document.add_paragraph('[1] Este costeo está en función a la información \
 registrada en el sistema de control de plazas NEXUS')
     nota1.italic = True
@@ -1251,25 +1532,21 @@ de la asignación por jornada de trabajo adicional y carga social \
 finalidades que se usaban anteriormente.')
     nota3.italic = True
     nota3.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-
-    nota4 = document.add_paragraph('[4] Se considera el clasificador 21.12.21')
-    nota4.italic = True
-    nota4.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     
-    anexo_parrafo1 = document.add_paragraph("Las fechas de actualización para las \
-secciones del documento se presentan en la tabla siguiente")
-    tabla_anexo_corte = document.add_table(rows=1, cols=2)
-    tabla_anexo_corte.style = "formato_tabla_minedu"
-    hdr_cells = tabla_anexo_corte.rows[0].cells
-    hdr_cells[0].text = "Sección"
-    hdr_cells[1].text = "Fecha de actualización"
-    for id, name in tabla_fechas_corte:
-        row = tabla_anexo_corte.add_row().cells
-        row[0].text = str(id)
-        row[1].text = str(name)
+    #anexo_parrafo1 = document.add_paragraph("Las fechas de actualización para las \
+#secciones del documento se presentan en la tabla siguiente:")
+    #tabla_anexo_corte = document.add_table(rows=1, cols=2)
+    #tabla_anexo_corte.style = "formato_tabla_minedu"
+    #hdr_cells = tabla_anexo_corte.rows[0].cells
+    #hdr_cells[0].text = "Sección"
+    #hdr_cells[1].text = "Fecha de actualización"
+    #for id, name in tabla_fechas_corte:
+        #row = tabla_anexo_corte.add_row().cells
+        #row[0].text = str(id)
+        #row[1].text = str(name)
         
     #######################
     # Guardamos documento #
     #######################
 
-    document.save(here() / f'output/{region}_AM.docx')
+    document.save(here() / f'output/AM_{region}_{fecha_actual}.docx')
