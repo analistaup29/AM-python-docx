@@ -8,7 +8,8 @@ import pandas as pd
 import numpy as np
 import nums_from_string
 import os
-import getpass 
+import getpass
+import glob
 from datetime import datetime
 #from pyprojroot import here
 from janitor import clean_names # pip install pyjanitor
@@ -37,8 +38,13 @@ lista_archivos = os.listdir(Path(proyecto / "input/intervenciones_pedagogicas"))
 fecha_actual = datetime.today().strftime('%d-%m-%y')
 
 ## A) Base disponibilidad
+# Importamos los nombres de los archivos en la carpeta intervenciones pedagogicas
+lista_archivos_int = glob.glob(os.path.join(proyecto,"input/intervenciones_pedagogicas/*"))
+#Mantenemos el corte de disponibilidad más reciente
+fecha_corte_disponibilidad = max(lista_archivos_int, key=os.path.getctime)
 # Nos quedamos con el nombre de archivo para la base de disponibilidad
-fecha_corte_disponibilidad = str([s for s in lista_archivos if "Disponibilidad_Presupuestal" in s])
+fecha_corte_disponibilidad = os.path.split(fecha_corte_disponibilidad)
+fecha_corte_disponibilidad = fecha_corte_disponibilidad[1]
 # Extraemos la fecha del nombre de archivo
 fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_corte_disponibilidad)
 # Convertimos a formato string
