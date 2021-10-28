@@ -1639,6 +1639,8 @@ lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True
 lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
 lista_regiones = lista_regiones[["path", "date","region"]]
 
+lista_regiones.to_excel(Path(proyecto,"lista_regiones.xlsx"), index = False)
+
 
     
 
