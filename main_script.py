@@ -1632,20 +1632,14 @@ finalidades que se usaban anteriormente.')
 # Generamos lista de AM.
 lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_{fecha_actual}/*"))
 
-df = pd.DataFrame (lista_AM)
-df.rename( columns={0:'path'}, inplace=True )
+lista_regiones = pd.DataFrame (lista_AM)
+lista_regiones.rename( columns={0:'path'}, inplace=True )
+lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
+lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
+lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
+lista_regiones = lista_regiones[["path", "date","region"]]
 
-df2 = df["path"].str.split("AM_", expand = True)
-df2.rename( columns={3:'name'}, inplace=True )
 
-df2["date"] = df2["name"].str.split(".", expand = True)
-
-df.pd.str.rsplit("/", n=1, expand=True)
-
-    #file_AM = os.path.split(lista_AM)
-    #file_AM = file_AM[1]
-    
-#list_test = lista_AM.split("\")
     
 
     
