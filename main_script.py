@@ -68,6 +68,22 @@ tabla_fechas_corte = (
     ("Compromisos de desempeño", fecha_corte_compromisos)
 )
 
+
+###############################################################################
+# Creación de carpeta donde se guardan los outputs #
+###############################################################################
+
+# Creación de carpeta
+dir = os.path.join(proyecto, f"output/AM_{fecha_actual}")
+if not os.path.exists(dir):
+    os.mkdir(dir)
+    print("Se creó una nueva carpeta")
+else:
+    print("Ya existe la carpeta")
+        
+# Path de nueva carpeta
+nueva_carpeta = Path(proyecto/ f"output/AM_{fecha_actual}")
+
 ###############################################################################
 # Transformación de Datasets #
 ###############################################################################
@@ -176,7 +192,7 @@ data_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "gen
 ######################################################
 
 # C) Base de Encargaturas
-df_consolidado_enc = pd.read_excel(proyecto / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'ENC-CONSOLIDADO-VF') 
+df_consolidado_enc = pd.read_excel(proyecto / 'input/conceptos_remunerativos/CONCEPTOS_CONSOLIDADOS_20211003.xlsx',sheet_name = 'ENC-CONSOLIDADO-VF') 
 df_consolidado_enc.fillna(0, inplace =  True)
 df_consolidado_enc['COSTO'] = df_consolidado_enc['COSTO-TRAMO I']
 df_consolidado_enc['PROGRAMADO POR MINEDU'] = df_consolidado_enc['APM2021'] + df_consolidado_enc['INCREMENTOS']+ df_consolidado_enc['NM ENCARGATURAS']
@@ -196,7 +212,7 @@ tabla_encargaturas_resumen = df_consolidado_enc[['REGION','UNIDAD EJECUTORA','CO
 
 
 # D) Base de Asignaciones Temporales
-df_consolidado_at = pd.read_excel(proyecto / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
+df_consolidado_at = pd.read_excel(proyecto / 'input/conceptos_remunerativos/CONCEPTOS_CONSOLIDADOS_20211003.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
 df_consolidado_at.fillna(0, inplace =  True)      
 df_consolidado_at.rename(columns={'REGIÓN':'REGION',
                                   'COSTO-TRAMO I':'COSTO',
@@ -207,7 +223,7 @@ df_consolidado_at.rename(columns={'REGIÓN':'REGION',
 df_at=df_consolidado_at[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MINEDU','TRANSFERENCIA POR DS N° 187-2021-EF']]
 
 # E) Base de Beneficios Sociales
-df_consolidado_bf = pd.read_excel(proyecto / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
+df_consolidado_bf = pd.read_excel(proyecto / 'input/conceptos_remunerativos/CONCEPTOS_CONSOLIDADOS_20211003.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
 df_consolidado_bf.fillna(0,inplace = True)
 df_consolidado_bf['COSTO BENEFICIARIOS 2020 Y 2021'] = df_consolidado_bf['LISTAS-2021'] + df_consolidado_bf['TRAMO I-BS 2020'] + df_consolidado_bf['TRAMO II-BS 2021']
 df_consolidado_bf.rename(columns={'REGIÓN':'REGION',
@@ -221,7 +237,7 @@ df_bs = df_consolidado_bf[['REGION','UNIDAD EJECUTORA','COSTO',
                            'TRANSFERENCIA POR DS N° 072-2021-EF',
                            'TRANSFERENCIA POR DS N° 256-2021-EF']]
 
-df_transferencia = pd.read_excel(proyecto / 'input/TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
+df_transferencia = pd.read_excel(proyecto / 'input/normas_transferencias/TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
 df_transferencia.fillna(0,inplace = True)
 df_transferencia = clean_names(df_transferencia)
 df_transferencia = df_transferencia[['region', 'norma_de_transferencia', 'concepto', 'monto_transferido']].\
@@ -239,7 +255,7 @@ df_transferencia["concepto"].replace({"CONTRATACIÓN MINDEF": "Contratación de 
 # Sobre el proceso de racionalización #
 ######################################################
 
-data_creacion = pd.read_excel(proyecto / "input/Creacion 2021.xlsx", sheet_name="BD",  skiprows = 2)
+data_creacion = pd.read_excel(proyecto / "input/creaciones/plazas_creacion_racio_2021.xlsx", sheet_name="BD",  skiprows = 2)
 data_creacion = clean_names(data_creacion) # Normalizamos nombres
 data_creacion = data_creacion[['d_region', 'd_dreugel', 'nivel', 'creacion_total']].\
 groupby(by = ["d_region", 'd_dreugel', 'nivel'] , as_index=False).sum()
@@ -259,7 +275,7 @@ data_creacion.fillna(0, inplace =  True)
 
 ## Creación plazas docentes -PEM 2021
 
-data_creacion_pem = pd.read_excel(proyecto / "input/Creacion PEM 2021.xlsx")
+data_creacion_pem = pd.read_excel(proyecto / "input/creaciones/plazas_creacion_pem_2021.xlsx")
 data_creacion_pem = clean_names(data_creacion_pem) # Normalizamos nombres
 data_creacion_pem = data_creacion_pem[['d_region', 'd_dreugel', 'modalidad', 'req_doc', 'req_bolsa', 'req_director', 'req_subdir']].\
 groupby(by = ["d_region", 'd_dreugel', 'modalidad'] , as_index=False).sum()
@@ -276,7 +292,7 @@ creacion_ebe_pem = data_creacion_pem[filtro_ebe]
 
 #----------------------------------------------------------------------#
 ## Brecha de plazas docentes
-data_brecha = pd.read_excel(proyecto / "input/Brecha UGEL 2020.xlsx", sheet_name="Data")
+data_brecha = pd.read_excel(proyecto / "input/brecha/brecha_ugel_2020.xlsx", sheet_name="Data")
 # Normalizamos nombres
 
 
@@ -304,7 +320,7 @@ data_brecha.fillna(0, inplace =  True)
 
 #----------------------------------------------------------------------#
 ## Bloqueo de plazas
-data_bloqueo = pd.read_excel(proyecto / "input/Bloqueo 2020.xlsx")
+data_bloqueo = pd.read_excel(proyecto / "input/bloqueo/plazas_bloqueo_2020.xlsx")
 data_bloqueo = clean_names(data_bloqueo) # Normalizamos nombres
 data_bloqueo.fillna(0, inplace =  True)
 
@@ -315,7 +331,7 @@ data_bloqueo = data_bloqueo.rename(columns={'descreg':'region'})
 
 #----------------------------------------------------------------------#
 ## Deuda social
-data_deuda_social = pd.read_excel(proyecto / "input/Deudas sociales.xlsx")
+data_deuda_social = pd.read_excel(proyecto / "input/deudas_sociales/deudas_sociales.xlsx")
 data_deuda_social = clean_names(data_deuda_social) # Normalizamos nombres
 
 ###############################################################################
@@ -1572,7 +1588,7 @@ enviada al Congreso de la República para su aprobación el 31 de agosto de 2021
     # Incluimos anexo notas y fechas de actualiz #
     ##############################################
     
-    document.add_heading("Anexos", level=1)
+    document.add_heading("Notas", level=1)
     nota1 = document.add_paragraph('[1] Este costeo está en función a la información \
 registrada en el sistema de control de plazas NEXUS')
     nota1.italic = True
@@ -1607,16 +1623,31 @@ finalidades que se usaban anteriormente.')
     # Guardamos documento #
     #######################
     
-    nueva_carpeta = Path(proyecto/ f"output/AM_{fecha_actual}")
     document.save(nueva_carpeta / f'AM_{region}_{fecha_actual}.docx')
     
-    # Generamos AM final.
-    lista_AM = glob.glob(os.path.join(proyecto,f"output/AM_{fecha_actual}/*"))
+###########################################################
+# Creamos tabla con lista de files para enviar por correo #
+###########################################################
     
+# Generamos lista de AM.
+lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_{fecha_actual}/*"))
+
+df = pd.DataFrame (lista_AM)
+df.rename( columns={0:'path'}, inplace=True )
+
+df2 = df["path"].str.split("AM_", expand = True)
+df2.rename( columns={3:'name'}, inplace=True )
+
+df2["date"] = df2["name"].str.split(".", expand = True)
+
+df.pd.str.rsplit("/", n=1, expand=True)
+
+    #file_AM = os.path.split(lista_AM)
+    #file_AM = file_AM[1]
     
+#list_test = lista_AM.split("\")
     
-    
-    
+
     
     
     
