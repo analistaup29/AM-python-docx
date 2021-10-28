@@ -10,6 +10,7 @@ import nums_from_string
 import os
 import getpass
 import glob
+import platform
 from datetime import datetime
 #from pyprojroot import here
 from janitor import clean_names # pip install pyjanitor
@@ -32,7 +33,7 @@ elif  getpass.getuser() == "bran": # PC Brandon
 ###############################################################################
 
 # Importamos los nombres de los archivos en la carpeta input
-lista_archivos = os.listdir(Path(proyecto / "input/intervenciones_pedagogicas"))
+lista_archivos = os.listdir(Path(proyecto, "input", "intervenciones_pedagogicas"))
 
 # Fecha de hoy
 fecha_actual = datetime.today().strftime('%d-%m-%y')
@@ -433,8 +434,8 @@ for region in lista_regiones:
         f"pim_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
         f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
         f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
-        "avance_pim": "{:,.1%}",
-        "costo_actual": "{:,.0f}",
+    #    "avance_pim": "{:,.1%}",
+    #    "costo_actual": "{:,.0f}",
         "avance_costo": "{:,.1%}",
         }
     #tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
@@ -666,9 +667,9 @@ for region in lista_regiones:
     row[1].text = "PIM"
     row[2].text = "COMP."
     row[3].text = "DEV."
-    row[4].text = "% DEV"
-    row[5].text = "COSTO AL MES"
-    row[6].text = "% DEV COSTO AL MES"
+    #row[4].text = "% DEV"
+    #row[5].text = "COSTO AL MES"
+    row[4].text = "% DEV COSTO AL MES"
     ## Contenido de la tabla
     for i in range(tabla_intervenciones_formato.shape[0]):
         for j in range(tabla_intervenciones_formato.shape[-1]):
@@ -1632,18 +1633,20 @@ finalidades que se usaban anteriormente.')
 # Generamos lista de AM.
 lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_{fecha_actual}/*"))
 
-lista_regiones = pd.DataFrame (lista_AM)
-lista_regiones.rename( columns={0:'path'}, inplace=True )
-lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
-lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
-lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
-lista_regiones = lista_regiones[["path", "date","region"]]
+if platform.system() == "Windows":
+    lista_regiones = pd.DataFrame (lista_AM)
+    lista_regiones.rename( columns={0:'path'}, inplace=True )
+    lista_regiones["path"] = lista_regiones["path"].str.replace('\\', '/')
+    lista_regiones[['a', 'b', 'c', 'd']] = lista_regiones["path"].str.split("AM_", expand = True)
+    lista_regiones[['date', 'e']] = lista_regiones["c"].str.split("/", expand = True)
+    lista_regiones[['region', 'g']] = lista_regiones["d"].str.split("_", expand = True)
+    lista_regiones = lista_regiones[["path", "date","region"]]
+elif platform.system() == "Darwin":
+    lista_regiones = pd.DataFrame (lista_AM)
+    lista_regiones.rename( columns={0:'path'}, inplace=True )
+    lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
+    lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
+    lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
+    lista_regiones = lista_regiones[["path", "date","region"]]
 
-lista_regiones.to_excel(Path(proyecto,"lista_regiones.xlsx"), index = False)
-
-
-    
-
-    
-    
-    
+lista_regiones.to_excel(Path(proyecto, "documentacion", "lista_regiones.xlsx"), index = False)
