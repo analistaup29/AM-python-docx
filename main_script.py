@@ -3,8 +3,8 @@
 """
 Created on Tue Sep 21 15:54:48 2021
 """
-#import docx
-#import pandas as pd
+import docx
+import pandas as pd
 import numpy as np
 import nums_from_string
 import os
