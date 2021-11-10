@@ -3,14 +3,13 @@
 """
 Created on Tue Sep 21 15:54:48 2021
 """
-import docx
-import pandas as pd
+#import docx
+#import pandas as pd
 import numpy as np
 import nums_from_string
 import os
 import getpass
 import glob
-import platform
 from datetime import datetime
 #from pyprojroot import here
 from janitor import clean_names # pip install pyjanitor
@@ -1633,20 +1632,11 @@ finalidades que se usaban anteriormente.')
 # Generamos lista de AM.
 lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_{fecha_actual}/*"))
 
-if platform.system() == "Windows":
-    lista_regiones = pd.DataFrame (lista_AM)
-    lista_regiones.rename( columns={0:'path'}, inplace=True )
-    lista_regiones["path"] = lista_regiones["path"].str.replace('\\', '/')
-    lista_regiones[['a', 'b', 'c', 'd']] = lista_regiones["path"].str.split("AM_", expand = True)
-    lista_regiones[['date', 'e']] = lista_regiones["c"].str.split("/", expand = True)
-    lista_regiones[['region', 'g']] = lista_regiones["d"].str.split("_", expand = True)
-    lista_regiones = lista_regiones[["path", "date","region"]]
-elif platform.system() == "Darwin":
-    lista_regiones = pd.DataFrame (lista_AM)
-    lista_regiones.rename( columns={0:'path'}, inplace=True )
-    lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
-    lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
-    lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
-    lista_regiones = lista_regiones[["path", "date","region"]]
+lista_regiones = pd.DataFrame (lista_AM)
+lista_regiones.rename( columns={0:'path'}, inplace=True )
+lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
+lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
+lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
+lista_regiones = lista_regiones[["path", "date","region"]]
 
 lista_regiones.to_excel(Path(proyecto, "documentacion", "lista_regiones.xlsx"), index = False)
