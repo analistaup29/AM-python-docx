@@ -106,18 +106,20 @@ data_intervenciones = data_intervenciones[data_intervenciones['especifica_de_gas
 
 # Mantenemos variables de interés (PIM, DEVENGADO, COMPROMETIDO CERTIFICADO) y 
 # colapsamos a nivel de Region, Intervencion Pedagogica y Cas-No-Cas
-data_intervenciones_total = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica","pia", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre"]]. \
+data_intervenciones_total = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica","pia", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre", "ds_n°_092_2021_ef_transferencia_convivencia", "ds_n°_169_2021_ef_1°_transferencia_intervenciones", "ds_n°_189_2021_ef_1°_transferencia_acompanatic", "ds_n°_209_2021_ef_2°_transferencia_intervenciones" ,"ds_n°_210_2021_ef_2°_transferencia_acompanatic_previo"
+]]. \
    groupby(by = ["region", "intervencion_pedagogica"] , as_index=False).sum()
 
-data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", "pia", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre"]]. \
+data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", "pia", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre", "ds_n°_092_2021_ef_transferencia_convivencia", "ds_n°_169_2021_ef_1°_transferencia_intervenciones", "ds_n°_189_2021_ef_1°_transferencia_acompanatic", "ds_n°_209_2021_ef_2°_transferencia_intervenciones" ,"ds_n°_210_2021_ef_2°_transferencia_acompanatic_previo"
+]]. \
    groupby(by = ["region","cas_no_cas", "intervencion_pedagogica"] , as_index=False).sum()
 
 # Transferencias
-data_intervenciones['transferencia'] = data_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"] - data_intervenciones['pia']
+data_intervenciones['transferencia'] = data_intervenciones["ds_n°_092_2021_ef_transferencia_convivencia"] + data_intervenciones["ds_n°_169_2021_ef_1°_transferencia_intervenciones"] + data_intervenciones["ds_n°_189_2021_ef_1°_transferencia_acompanatic"] + data_intervenciones["ds_n°_209_2021_ef_2°_transferencia_intervenciones"] + data_intervenciones["ds_n°_210_2021_ef_2°_transferencia_acompanatic_previo"]
 
 # Eliminamos filas con 0 PIM
-condicion_elim = (data_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"] != 0) 
-data_intervenciones = data_intervenciones[condicion_elim]
+#condicion_elim = (data_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"] != 0) 
+#data_intervenciones = data_intervenciones[condicion_elim]
 
 # Calculamos porcentajes
 ## Avance PIM
@@ -152,7 +154,7 @@ data_intervenciones_2020 = pd.read_excel(proyecto / "input/am_corta/6. Disponibi
 #######################
 
 ## Cargamos la base insumo de mascarillas
-data_mascarillas = pd.read_excel(proyecto / "input/mascarillas/Incorporación_DU_SIAF_20211003.xlsx", sheet_name='Sheet1')
+data_mascarillas = pd.read_excel(proyecto / "input/mascarillas/Incorporación_DU_SIAF_20211108.xlsx", sheet_name='Sheet1')
 data_mascarillas = clean_names(data_mascarillas) # Normalizamos nombres
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
@@ -358,15 +360,19 @@ data_inversiones = clean_names(data_inversiones) # Normalizamos nombres
 data_kit_lavamanos = pd.read_excel(proyecto / "input/am_corta/02. Kit de higiene y lavamanos.xlsx", sheet_name="Análisis", skiprows=5)
 data_kit_lavamanos = clean_names(data_kit_lavamanos) # Normalizamos nombres
 
-data_cdd_2021 = pd.read_excel(proyecto / "input/am_corta/03. CDD_20211109.xlsx", sheet_name="Sheet1")
+#data_cdd_2021 = pd.read_excel(proyecto / "input/am_corta/03. CDD_20211109.xlsx", sheet_name="Sheet1")
+#data_cdd_2021 = clean_names(data_cdd_2021) # Normalizamos nombres
+
+data_cdd_2021 = pd.read_excel(proyecto / "input/am_corta/02. CDD_AM Plantilla.xlsx", sheet_name="02. CDD", skiprows=5)
 data_cdd_2021 = clean_names(data_cdd_2021) # Normalizamos nombres
 
+
 # Hacemos merge con base de datos región
-data_cdd_2021 = data_cdd_2021.merge(right = nombre_regiones, how="left", on = "cod_pliego")
+#data_cdd_2021 = data_cdd_2021.merge(right = nombre_regiones, how="left", on = "cod_pliego")
 
 # Mantenemos variables de interés (region,  pim, devengado y colapsamos a nivel de Region)
-data_cdd_2021 = data_cdd_2021[["region", "pim", "devengado"]]. \
-    groupby(by = ["region"], as_index=False).sum()
+#data_cdd_2021 = data_cdd_2021[["region", "pim", "devengado"]]. \
+#    groupby(by = ["region"], as_index=False).sum()
 
 # Asignaciones temporales
 data_asignaciones_2021 = pd.read_excel(proyecto / "input/am_corta/08. Asignaciones Temporales.xlsx", sheet_name="Sheet2")
@@ -377,19 +383,22 @@ data_asignaciones_2021 = pd.read_excel(proyecto / "input/am_corta/08. Asignacion
 data_deuda = pd.read_excel(proyecto / "input/am_corta/00b_Deudas sociales.xlsx", sheet_name="Base", skiprows=1)
 data_deuda = clean_names(data_deuda) # Normalizamos nombres
 
-
 # Plazas
-
 data_plazas = pd.read_excel(proyecto / "input/am_corta/10. Plazas financiadas.xlsx", sheet_name="P_Financiadas", skiprows=3)
 
+# Conceptos remunerativos
+data_conceptos_remunerativos_2021 = pd.read_excel(proyecto / "input/am_corta/00a_Conceptos remunerativos consolid.xlsx", sheet_name="Base agregada", skiprows=3)
+data_conceptos_remunerativos_2021 = clean_names(data_conceptos_remunerativos_2021) # Normalizamos nombres
 
+## Beneficios sociales
+data_beneficios_sociales_2021 = pd.read_excel(proyecto / "input/am_corta/09. Beneficios sociales.xlsx", sheet_name="TD_BS", skiprows=2)
+data_beneficios_sociales_2021 = clean_names(data_beneficios_sociales_2021)
 
 ###############################################################################
 # Creación del documento en docx 
 ###############################################################################
 
 # Generamos la lista de Regiones
-#lista_regiones = ["AMAZONAS"]
 lista_regiones = ["AMAZONAS", "ANCASH", "APURIMAC", "AREQUIPA", "AYACUCHO", "CAJAMARCA", "CUSCO", "HUANCAVELICA", "HUANUCO", "ICA", "JUNIN", "LA LIBERTAD", "LAMBAYEQUE", "LORETO", "MADRE DE DIOS", "MOQUEGUA", "PASCO", "PIURA", "PUNO", "SAN MARTIN", "TACNA", "TUMBES", "UCAYALI", "LIMA PROVINCIAS", "CALLAO"]
 
 # For loop para cada región
@@ -399,6 +408,34 @@ for region in lista_regiones:
     # Construcción de tablas e indicadores #
     ###########################################################################
 
+    ############################################
+    # Tablas e indicadores beneficios sociales #
+    ############################################
+    
+    region_seleccionada = data_beneficios_sociales_2021['region'] == region
+    data_beneficios_region = data_beneficios_sociales_2021[region_seleccionada]
+    
+    costo_beneficios = str('{:,.0f}'.format(data_beneficios_region.iloc[0]['costo_beneficios']))
+    pia_beneficios = str('{:,.0f}'.format(data_beneficios_region.iloc[0]['pia_beneficios']))
+    ds_072_beneficios = str('{:,.0f}'.format(data_beneficios_region.iloc[0]['transferencia_072']))
+    ds_256_beneficios = str('{:,.0f}'.format(data_beneficios_region.iloc[0]['transferencia_256']))
+    
+    costo_beneficios_c = data_beneficios_region.iloc[0]['costo_beneficios']
+    pia_beneficios_c = data_beneficios_region.iloc[0]['pia_beneficios']
+    ds_072_beneficios_c = data_beneficios_region.iloc[0]['transferencia_072']
+    ds_256_beneficios_c = data_beneficios_region.iloc[0]['transferencia_256']
+
+    ############################################
+    # Tablas e indicadores conceptos remunerativos #
+    ############################################
+    
+    region_seleccionada = data_conceptos_remunerativos_2021['region'] == region
+
+    data_remuneracion_region = data_conceptos_remunerativos_2021[region_seleccionada]
+    
+    conceptos_remunerativos_2021 =  str('{:,.0f}'.format(data_remuneracion_region.iloc[0]['conceptos_remunerativos']))
+    conceptos_remunerativos_2021_c =  data_remuneracion_region.iloc[0]['conceptos_remunerativos']
+    
     ############################################
     # Tablas e indicadores asignaciones temporales #
     ############################################
@@ -447,8 +484,8 @@ for region in lista_regiones:
     region_seleccionada = data_cdd_2021['region'] == region #Seleccionar region
     
     data_transferencia_cdd_2021 = data_cdd_2021[region_seleccionada]
-    monto_transferencia_cdd_2021_c = data_transferencia_cdd_2021.iloc[0]['pim'] # Valor numérico
-    monto_transferencia_cdd_2021 = str('{:,.0f}'.format(data_transferencia_cdd_2021.iloc[0]['pim'])) # Valor con comas (string)
+    monto_transferencia_cdd_2021_c = data_transferencia_cdd_2021.iloc[0]['recursos_transferidos_'] # Valor numérico
+    monto_transferencia_cdd_2021 = str('{:,.0f}'.format(data_transferencia_cdd_2021.iloc[0]['recursos_transferidos_'])) # Valor con comas (string)
     cdd_ejecucion_2021 = str('{:,.1%}'.format(data_transferencia_cdd_2021["devengado"].sum()/data_transferencia_cdd_2021["pim"].sum()))
     
     ############################################
@@ -783,10 +820,8 @@ for region in lista_regiones:
     # monto_plazas
     # monto_deuda_c
     
-    total_transferido = str('{:,.0f}'.format(np.sum([transferencia_region_2021_c, ds_217_c, transferencia_asignacion_c, ds_72_bs_c, monto_region_inversiones_c, transferencia_mascarilla_c, monto_region_kit_c, monto_region_lavamanos_c, monto_transferencia_cdd_2021_c, monto_deuda_c, monto_plazas_c])))
-    
-    conceptos_remunerativos = str('{:,.0f}'.format(np.sum([monto_plazas_c, ds_217_c, transferencia_asignacion_c, ds_72_bs_c])))
-    
+    total_transferido = str('{:,.0f}'.format(np.sum([transferencia_region_2021_c, conceptos_remunerativos_2021_c, monto_deuda_c, monto_region_inversiones_c, transferencia_mascarilla_c, monto_region_kit_c, monto_region_lavamanos_c, monto_transferencia_cdd_2021_c])))
+        
     ############################################
     # Tablas de Carátula #
     ############################################
@@ -800,7 +835,7 @@ for region in lista_regiones:
     # Creamos tabla con fechas de corte
     tabla_1 = (
         ("Intervenciones pedagógicas", transferencia_region_2021),
-        ("Conceptos remunerativos", conceptos_remunerativos),
+        ("Conceptos remunerativos", conceptos_remunerativos_2021),
         ("Deuda social", monto_deuda),
         ("Inversiones", monto_region_inversiones)
     )
@@ -1037,19 +1072,19 @@ de partidas por el monto de S/ ')
  un costo total de S/. ')
     encarg_parrafo10.add_run(f'{costo_bs}') #Insertar valor de base de datos    
     encarg_parrafo10.add_run(' y se han aprobado pagos hasta por un costo de S/. ')
-    encarg_parrafo10.add_run(f'{lista_bf}') #Insertar valor de base de datos    
+    encarg_parrafo10.add_run(costo_beneficios) #Insertar valor de base de datos    
     encarg_parrafo10.add_run('. Se gestionó una programación directa de recursos en el PIA ')
     encarg_parrafo10.add_run(' por el monto de S/. ')
-    encarg_parrafo10.add_run(f'{apm_bs},') #Insertar valor de base de datos    
+    encarg_parrafo10.add_run(pia_beneficios) #Insertar valor de base de datos    
     encarg_parrafo10.add_run(' lo cual fue comunicado a través del ')
     encarg_parrafo10.add_run('Oficio Múltiple N° 00011-2021-MINEDU/SPE-OPEP-UPP') #Esto cambiará cada año
     encarg_parrafo10.add_run('. Con Decreto Supremo N° 072-2021-EF')
     encarg_parrafo10.add_run(', se ha transferido ')   
-    encarg_parrafo10.add_run(f'{ds_72_bs}.') #Insertar valor de base de datos   
-    encarg_parrafo10.add_run(' Mediante ')
+    encarg_parrafo10.add_run(ds_072_beneficios) #Insertar valor de base de datos   
+    encarg_parrafo10.add_run('. Mediante ')
     encarg_parrafo10.add_run('Decreto Supremo N° 256-2021-EF se realizó la segunda transferencia por')
     encarg_parrafo10.add_run(' S/ ')
-    encarg_parrafo10.add_run(f'{ds_256_bs}.') #Insertar valor de base de datos   
+    encarg_parrafo10.add_run(ds_256_beneficios) #Insertar valor de base de datos   
     encarg_parrafo10.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
     #####################################################
