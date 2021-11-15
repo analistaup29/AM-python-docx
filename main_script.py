@@ -32,7 +32,7 @@ elif  getpass.getuser() == "bran": # PC Brandon
 ###############################################################################
 
 # Importamos los nombres de los archivos en la carpeta input
-lista_archivos = os.listdir(Path(proyecto / "input/intervenciones_pedagogicas"))
+lista_archivos = os.listdir(Path(proyecto, "input", "intervenciones_pedagogicas"))
 
 # Fecha de hoy
 fecha_actual = datetime.today().strftime('%d-%m-%y')
@@ -68,6 +68,22 @@ tabla_fechas_corte = (
     ("Compromisos de desempeño", fecha_corte_compromisos)
 )
 
+
+###############################################################################
+# Creación de carpeta donde se guardan los outputs #
+###############################################################################
+
+# Creación de carpeta
+dir = os.path.join(proyecto, f"output/AM_{fecha_actual}")
+if not os.path.exists(dir):
+    os.mkdir(dir)
+    print("Se creó una nueva carpeta")
+else:
+    print("Ya existe la carpeta")
+        
+# Path de nueva carpeta
+nueva_carpeta = Path(proyecto/ f"output/AM_{fecha_actual}")
+
 ###############################################################################
 # Transformación de Datasets #
 ###############################################################################
@@ -94,8 +110,11 @@ data_intervenciones = data_intervenciones[data_intervenciones['especifica_de_gas
 
 # Mantenemos variables de interés (PIM, DEVENGADO, COMPROMETIDO CERTIFICADO) y 
 # colapsamos a nivel de Region, Intervencion Pedagogica y Cas-No-Cas
+data_intervenciones_total = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre"]]. \
+   groupby(by = ["region", "intervencion_pedagogica"] , as_index=False).sum()
+
 data_intervenciones = data_intervenciones[["region", "cas_no_cas","intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "costo_enero", "costo_febrero", "costo_marzo", "costo_abril", "costo_mayo", "costo_junio", "costo_julio", "costo_agosto", "costo_septiembre", "costo_octubre", "costo_noviembre", "costo_diciembre"]]. \
-   groupby(by = ["region", "cas_no_cas", "intervencion_pedagogica"] , as_index=False).sum()
+   groupby(by = ["region","cas_no_cas", "intervencion_pedagogica"] , as_index=False).sum()
 
 # Eliminamos filas con 0 PIM
 condicion_elim = (data_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"] != 0) 
@@ -110,7 +129,7 @@ data_intervenciones["costo_actual"] = data_intervenciones["costo_enero"] + data_
 data_intervenciones["avance_costo"] = data_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"]/data_intervenciones["costo_actual"]
 
 # Mantenemos y ordenamos columnas
-data_intervenciones = data_intervenciones[['region','cas_no_cas', "intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "avance_pim", "costo_actual", "avance_costo"]]
+data_intervenciones = data_intervenciones[['region', "intervencion_pedagogica", f"pim_reporte_siaf_{fecha_corte_disponibilidad}", f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}", f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}", "avance_pim", "costo_actual", "avance_costo"]]
 
 ## Reemplazamos inf por NaN
 data_intervenciones.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -120,9 +139,9 @@ data_intervenciones['avance_pim'] = data_intervenciones['avance_pim'].fillna("0"
 data_intervenciones['avance_costo'] = data_intervenciones['avance_costo'].fillna("0").astype(float)
 
 # Tabla intervenciones CAS
-data_intervenciones_cas = data_intervenciones[data_intervenciones['cas_no_cas'] != "NO CAS"]
+#data_intervenciones_cas = data_intervenciones[data_intervenciones['cas_no_cas'] != "NO CAS"]
 # Tabla intervenciones NO CAS
-data_intervenciones_nocas = data_intervenciones[data_intervenciones['cas_no_cas'] != "CAS"]
+#data_intervenciones_nocas = data_intervenciones[data_intervenciones['cas_no_cas'] != "CAS"]
 
 #######################
 # Siaf de mascarillas #
@@ -173,7 +192,7 @@ data_cdd = data_cdd[["region", "unidad_ejecutora", "programa_presupuestal", "gen
 ######################################################
 
 # C) Base de Encargaturas
-df_consolidado_enc = pd.read_excel(proyecto / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'ENC-CONSOLIDADO-VF') 
+df_consolidado_enc = pd.read_excel(proyecto / 'input/conceptos_remunerativos/CONCEPTOS_CONSOLIDADOS_20211003.xlsx',sheet_name = 'ENC-CONSOLIDADO-VF') 
 df_consolidado_enc.fillna(0, inplace =  True)
 df_consolidado_enc['COSTO'] = df_consolidado_enc['COSTO-TRAMO I']
 df_consolidado_enc['PROGRAMADO POR MINEDU'] = df_consolidado_enc['APM2021'] + df_consolidado_enc['INCREMENTOS']+ df_consolidado_enc['NM ENCARGATURAS']
@@ -193,7 +212,7 @@ tabla_encargaturas_resumen = df_consolidado_enc[['REGION','UNIDAD EJECUTORA','CO
 
 
 # D) Base de Asignaciones Temporales
-df_consolidado_at = pd.read_excel(proyecto / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
+df_consolidado_at = pd.read_excel(proyecto / 'input/conceptos_remunerativos/CONCEPTOS_CONSOLIDADOS_20211003.xlsx',sheet_name = 'AT-CONSOLIDADO-VF')   
 df_consolidado_at.fillna(0, inplace =  True)      
 df_consolidado_at.rename(columns={'REGIÓN':'REGION',
                                   'COSTO-TRAMO I':'COSTO',
@@ -204,7 +223,7 @@ df_consolidado_at.rename(columns={'REGIÓN':'REGION',
 df_at=df_consolidado_at[['REGION','UNIDAD EJECUTORA','COSTO','PROGRAMADO POR MINEDU','TRANSFERENCIA POR DS N° 187-2021-EF']]
 
 # E) Base de Beneficios Sociales
-df_consolidado_bf = pd.read_excel(proyecto / 'input/CONCEPTOS CONSOLIDADOS.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
+df_consolidado_bf = pd.read_excel(proyecto / 'input/conceptos_remunerativos/CONCEPTOS_CONSOLIDADOS_20211003.xlsx',sheet_name = 'BS-CONSOLIDADO-VF')           
 df_consolidado_bf.fillna(0,inplace = True)
 df_consolidado_bf['COSTO BENEFICIARIOS 2020 Y 2021'] = df_consolidado_bf['LISTAS-2021'] + df_consolidado_bf['TRAMO I-BS 2020'] + df_consolidado_bf['TRAMO II-BS 2021']
 df_consolidado_bf.rename(columns={'REGIÓN':'REGION',
@@ -218,7 +237,7 @@ df_bs = df_consolidado_bf[['REGION','UNIDAD EJECUTORA','COSTO',
                            'TRANSFERENCIA POR DS N° 072-2021-EF',
                            'TRANSFERENCIA POR DS N° 256-2021-EF']]
 
-df_transferencia = pd.read_excel(proyecto / 'input/TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
+df_transferencia = pd.read_excel(proyecto / 'input/normas_transferencias/TRANSFERENCIAS 2021.xlsx',sheet_name = 'TRANSFERENCIAS')           
 df_transferencia.fillna(0,inplace = True)
 df_transferencia = clean_names(df_transferencia)
 df_transferencia = df_transferencia[['region', 'norma_de_transferencia', 'concepto', 'monto_transferido']].\
@@ -236,7 +255,7 @@ df_transferencia["concepto"].replace({"CONTRATACIÓN MINDEF": "Contratación de 
 # Sobre el proceso de racionalización #
 ######################################################
 
-data_creacion = pd.read_excel(proyecto / "input/Creacion 2021.xlsx", sheet_name="BD",  skiprows = 2)
+data_creacion = pd.read_excel(proyecto / "input/creaciones/plazas_creacion_racio_2021.xlsx", sheet_name="BD",  skiprows = 2)
 data_creacion = clean_names(data_creacion) # Normalizamos nombres
 data_creacion = data_creacion[['d_region', 'd_dreugel', 'nivel', 'creacion_total']].\
 groupby(by = ["d_region", 'd_dreugel', 'nivel'] , as_index=False).sum()
@@ -256,7 +275,7 @@ data_creacion.fillna(0, inplace =  True)
 
 ## Creación plazas docentes -PEM 2021
 
-data_creacion_pem = pd.read_excel(proyecto / "input/Creacion PEM 2021.xlsx")
+data_creacion_pem = pd.read_excel(proyecto / "input/creaciones/plazas_creacion_pem_2021.xlsx")
 data_creacion_pem = clean_names(data_creacion_pem) # Normalizamos nombres
 data_creacion_pem = data_creacion_pem[['d_region', 'd_dreugel', 'modalidad', 'req_doc', 'req_bolsa', 'req_director', 'req_subdir']].\
 groupby(by = ["d_region", 'd_dreugel', 'modalidad'] , as_index=False).sum()
@@ -273,7 +292,7 @@ creacion_ebe_pem = data_creacion_pem[filtro_ebe]
 
 #----------------------------------------------------------------------#
 ## Brecha de plazas docentes
-data_brecha = pd.read_excel(proyecto / "input/Brecha UGEL 2020.xlsx", sheet_name="Data")
+data_brecha = pd.read_excel(proyecto / "input/brecha/brecha_ugel_2020.xlsx", sheet_name="Data")
 # Normalizamos nombres
 
 
@@ -301,7 +320,7 @@ data_brecha.fillna(0, inplace =  True)
 
 #----------------------------------------------------------------------#
 ## Bloqueo de plazas
-data_bloqueo = pd.read_excel(proyecto / "input/Bloqueo 2020.xlsx")
+data_bloqueo = pd.read_excel(proyecto / "input/bloqueo/plazas_bloqueo_2020.xlsx")
 data_bloqueo = clean_names(data_bloqueo) # Normalizamos nombres
 data_bloqueo.fillna(0, inplace =  True)
 
@@ -312,7 +331,7 @@ data_bloqueo = data_bloqueo.rename(columns={'descreg':'region'})
 
 #----------------------------------------------------------------------#
 ## Deuda social
-data_deuda_social = pd.read_excel(proyecto / "input/Deudas sociales.xlsx")
+data_deuda_social = pd.read_excel(proyecto / "input/deudas_sociales/deudas_sociales.xlsx")
 data_deuda_social = clean_names(data_deuda_social) # Normalizamos nombres
 
 ###############################################################################
@@ -341,48 +360,72 @@ for region in lista_regiones:
     porcentaje_ejecucion = str('{:,.1%}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()))
     porcentaje_costomesactual = str('{:,.1%}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones["costo_actual"].sum()))
     
+    # TOTAL
+    
+    tabla_intervenciones_formato = data_intervenciones[region_seleccionada]
+    
+    # Generamos porcentaje de avance
+    porcentaje_ejecucion_a = tabla_intervenciones_formato[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
+    porcentaje_costomesactual_a = tabla_intervenciones_formato[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato["costo_actual"].sum()
+    
+    # Generamos fila total
+    total_int = tabla_intervenciones_formato.groupby(by = ["region"], as_index=False).sum()
+
+    # Realizamos append del total en la tabla
+    tabla_intervenciones_formato = tabla_intervenciones_formato.append(total_int, ignore_index=True)
+
+    # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
+    tabla_intervenciones_formato.iloc[-1, tabla_intervenciones_formato.columns.get_loc('avance_pim')] = porcentaje_ejecucion_a
+    tabla_intervenciones_formato.iloc[-1, tabla_intervenciones_formato.columns.get_loc('avance_costo')] = porcentaje_costomesactual_a
+
+    #Incluimos palabra "total" y "-" en vez de NaN
+    tabla_intervenciones_formato['intervencion_pedagogica'] = tabla_intervenciones_formato['intervencion_pedagogica'].fillna("Total")
+    tabla_intervenciones_formato['avance_pim'] = tabla_intervenciones_formato['avance_pim'].fillna("0").astype(float)
+    tabla_intervenciones_formato['avance_costo'] = tabla_intervenciones_formato['avance_costo'].fillna("0").astype(float)
+    
+
     # CAS
-    tabla_intervenciones_formato_cas = data_intervenciones_cas[region_seleccionada]
+    #tabla_intervenciones_formato_cas = data_intervenciones_cas[region_seleccionada]
     
     # Generamos porcentaje de avance CAS
-    porcentaje_ejecucion_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
-    porcentaje_costomesactual_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas["costo_actual"].sum()
+    #porcentaje_ejecucion_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
+    #porcentaje_costomesactual_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas["costo_actual"].sum()
     
     # Generamos fila total
-    total_int_cas = tabla_intervenciones_formato_cas.groupby(by = ["region"], as_index=False).sum()
+    #total_int_cas = tabla_intervenciones_formato_cas.groupby(by = ["region"], as_index=False).sum()
     
     # Realizamos append del total en la tabla
-    tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.append(total_int_cas, ignore_index=True)
+    #tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.append(total_int_cas, ignore_index=True)
     
     # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
-    tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_cas
-    tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_cas
+    #tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_cas
+    #tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_cas
     
     #Incluimos palabra "total" y "-" en vez de NaN
-    tabla_intervenciones_formato_cas['intervencion_pedagogica'] = tabla_intervenciones_formato_cas['intervencion_pedagogica'].fillna("Total")
-    tabla_intervenciones_formato_cas['avance_pim'] = tabla_intervenciones_formato_cas['avance_pim'].fillna("0").astype(float)
-    tabla_intervenciones_formato_cas['avance_costo'] = tabla_intervenciones_formato_cas['avance_costo'].fillna("0").astype(float)
+    #tabla_intervenciones_formato_cas['intervencion_pedagogica'] = tabla_intervenciones_formato_cas['intervencion_pedagogica'].fillna("Total")
+    #tabla_intervenciones_formato_cas['avance_pim'] = tabla_intervenciones_formato_cas['avance_pim'].fillna("0").astype(float)
+    #tabla_intervenciones_formato_cas['avance_costo'] = tabla_intervenciones_formato_cas['avance_costo'].fillna("0").astype(float)
     
     # NO CAS
-    tabla_intervenciones_formato_nocas = data_intervenciones_nocas[region_seleccionada]
+    #tabla_intervenciones_formato_nocas = data_intervenciones_nocas[region_seleccionada]
     
     # Generamos porcentaje de avance NO CAS
-    porcentaje_ejecucion_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
-    porcentaje_costomesactual_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas["costo_actual"].sum()
+    #porcentaje_ejecucion_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
+    #porcentaje_costomesactual_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas["costo_actual"].sum()
     
     # Generamos fila total
-    total_int_nocas = tabla_intervenciones_formato_nocas.groupby(by = ["region"], as_index=False).sum()
+    #total_int_nocas = tabla_intervenciones_formato_nocas.groupby(by = ["region"], as_index=False).sum()
     # Realizamos append del total en la tabla
-    tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.append(total_int_nocas, ignore_index=True)
+    #tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.append(total_int_nocas, ignore_index=True)
     
     # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
-    tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_nocas
-    tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_nocas
+    #tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_nocas
+    #tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_nocas
     
     #Incluimos palabra "total" y "-" en vez de NaN
-    tabla_intervenciones_formato_nocas['intervencion_pedagogica'] = tabla_intervenciones_formato_nocas['intervencion_pedagogica'].fillna("Total")
-    tabla_intervenciones_formato_nocas['avance_pim'] = tabla_intervenciones_formato_nocas['avance_pim'].fillna("0").astype(float)
-    tabla_intervenciones_formato_nocas['avance_costo'] = tabla_intervenciones_formato_nocas['avance_costo'].fillna("0").astype(float)
+    #tabla_intervenciones_formato_nocas['intervencion_pedagogica'] = tabla_intervenciones_formato_nocas['intervencion_pedagogica'].fillna("Total")
+    #tabla_intervenciones_formato_nocas['avance_pim'] = tabla_intervenciones_formato_nocas['avance_pim'].fillna("0").astype(float)
+    #tabla_intervenciones_formato_nocas['avance_costo'] = tabla_intervenciones_formato_nocas['avance_costo'].fillna("0").astype(float)
     
     # Formato para la tabla
     formato_tabla_intervenciones = {
@@ -390,13 +433,14 @@ for region in lista_regiones:
         f"pim_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
         f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
         f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
-        "avance_pim": "{:,.1%}",
-        "costo_actual": "{:,.0f}",
+    #    "avance_pim": "{:,.1%}",
+    #    "costo_actual": "{:,.0f}",
         "avance_costo": "{:,.1%}",
         }
-    tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
-    tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
+    #tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
+    #tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
 
+    tabla_intervenciones_formato = tabla_intervenciones_formato.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
     
     ############################################
     # Tablas e indicadores mascarillas #
@@ -583,25 +627,38 @@ for region in lista_regiones:
     " millones en su Presupuesto Institucional Modificado (PIM) para el \
     financiamiento de intervenciones y acciones pedagógicas, de los cuales se han ejecutado S/ ")
     interv_parrafo2.add_run(ejecucion_intervenciones_region)
+    interv_parrafo2.add_run(" lo cual corresponde a ")
+    interv_parrafo2.add_run(porcentaje_ejecucion)
     interv_parrafo2.add_run(".")
 
     interv_parrafo2.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-    # Incluimos tabla 1 intervenciones CAS
-    cas_titulo = document.add_paragraph()
-    cas_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
-    cas_titulo_negrita = cas_titulo.add_run("Intervenciones Pedagógicas - Componente CAS (soles)")
-    cas_titulo_negrita.bold = True    
-    tabla1_interv = document.add_table(tabla_intervenciones_formato_cas.shape[0]+1, tabla_intervenciones_formato_cas.shape[1])
+    # Incluimos tabla 1 intervenciones CAS    
+    int_titulo = document.add_paragraph()
+    int_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+    int_titulo_negrita = int_titulo.add_run("Intervenciones Pedagógicas (soles)")
+    int_titulo_negrita.bold = True    
+    tabla1_interv = document.add_table(tabla_intervenciones_formato.shape[0]+1, tabla_intervenciones_formato.shape[1])
     tabla1_interv.autofit = False
     tabla1_interv.allow_autofit = True
     tabla1_interv.style = "formato_tabla_minedu"
-    nocas_titulo = document.add_paragraph()
-    nocas_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
-    nocas_tit2 = nocas_titulo.add_run("Intervenciones Pedagógicas - Componente NO CAS (soles)")
-    nocas_tit2.bold = True    
-    tabla2_interv = document.add_table(tabla_intervenciones_formato_nocas.shape[0]+1, tabla_intervenciones_formato_nocas.shape[1])
+
+    
+    # Incluimos tabla 1 intervenciones CAS
+    #cas_titulo = document.add_paragraph()
+    #cas_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+    #cas_titulo_negrita = cas_titulo.add_run("Intervenciones Pedagógicas - Componente CAS (soles)")
+    #cas_titulo_negrita.bold = True    
+    #tabla1_interv = document.add_table(tabla_intervenciones_formato_cas.shape[0]+1, tabla_intervenciones_formato_cas.shape[1])
+    #tabla1_interv.autofit = False
+    #tabla1_interv.allow_autofit = True
+    #tabla1_interv.style = "formato_tabla_minedu"
+    #nocas_titulo = document.add_paragraph()
+    #nocas_titulo.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.CENTER
+    #nocas_tit2 = nocas_titulo.add_run("Intervenciones Pedagógicas - Componente NO CAS (soles)")
+    #nocas_tit2.bold = True    
+    #tabla2_interv = document.add_table(tabla_intervenciones_formato_nocas.shape[0]+1, tabla_intervenciones_formato_nocas.shape[1])
     #tabla2_interv.allow_autofit
-    tabla2_interv.style = "formato_tabla_minedu"
+    #tabla2_interv.style = "formato_tabla_minedu"
     
     ## Header de la tabla
     row = tabla1_interv.rows[0].cells
@@ -609,26 +666,26 @@ for region in lista_regiones:
     row[1].text = "PIM"
     row[2].text = "COMP."
     row[3].text = "DEV."
-    row[4].text = "% DEV"
-    row[5].text = "COSTO AL MES"
-    row[6].text = "% DEV COSTO AL MES"
+    #row[4].text = "% DEV"
+    #row[5].text = "COSTO AL MES"
+    row[4].text = "% DEV COSTO AL MES"
     ## Contenido de la tabla
-    for i in range(tabla_intervenciones_formato_cas.shape[0]):
-        for j in range(tabla_intervenciones_formato_cas.shape[-1]):
-            tabla1_interv.cell(i+1,j).text = str(tabla_intervenciones_formato_cas.values[i,j])
+    for i in range(tabla_intervenciones_formato.shape[0]):
+        for j in range(tabla_intervenciones_formato.shape[-1]):
+            tabla1_interv.cell(i+1,j).text = str(tabla_intervenciones_formato.values[i,j])
         
     ## Header de la tabla
-    row = tabla2_interv.rows[0].cells
-    row[0].text = "INTERVENCIONES"
-    row[1].text = "PIM"
-    row[2].text = "COMP."
-    row[3].text = "DEV."
-    row[4].text = "% DEV"
-    row[5].text = "COSTO AL MES"
-    row[6].text = "% DEV COSTO AL MES"
-    for i in range(tabla_intervenciones_formato_nocas.shape[0]):
-        for j in range(tabla_intervenciones_formato_nocas.shape[-1]):
-            tabla2_interv.cell(i+1,j).text = str(tabla_intervenciones_formato_nocas.values[i,j])
+    #row = tabla2_interv.rows[0].cells
+    #row[0].text = "INTERVENCIONES"
+    #row[1].text = "PIM"
+    #row[2].text = "COMP."
+    #row[3].text = "DEV."
+    #row[4].text = "% DEV"
+    #row[5].text = "COSTO AL MES"
+    #row[6].text = "% DEV COSTO AL MES"
+    #for i in range(tabla_intervenciones_formato_nocas.shape[0]):
+    #    for j in range(tabla_intervenciones_formato_nocas.shape[-1]):
+    #        tabla2_interv.cell(i+1,j).text = str(tabla_intervenciones_formato_nocas.values[i,j])
     
     parrafo_espacio_int = document.add_paragraph('')   
     interv_parrafo3 = document.add_paragraph(
@@ -1531,7 +1588,7 @@ enviada al Congreso de la República para su aprobación el 31 de agosto de 2021
     # Incluimos anexo notas y fechas de actualiz #
     ##############################################
     
-    document.add_heading("Anexos", level=1)
+    document.add_heading("Notas", level=1)
     nota1 = document.add_paragraph('[1] Este costeo está en función a la información \
 registrada en el sistema de control de plazas NEXUS')
     nota1.italic = True
@@ -1565,6 +1622,21 @@ finalidades que se usaban anteriormente.')
     #######################
     # Guardamos documento #
     #######################
-    nueva_carpeta = Path(proyecto/ f"output/AM_{fecha_actual}")
+    
     document.save(nueva_carpeta / f'AM_{region}_{fecha_actual}.docx')
     
+###########################################################
+# Creamos tabla con lista de files para enviar por correo #
+###########################################################
+    
+# Generamos lista de AM.
+lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_{fecha_actual}/*"))
+
+lista_regiones = pd.DataFrame (lista_AM)
+lista_regiones.rename( columns={0:'path'}, inplace=True )
+lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
+lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
+lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
+lista_regiones = lista_regiones[["path", "date","region"]]
+
+lista_regiones.to_excel(Path(proyecto, "documentacion", "lista_regiones.xlsx"), index = False)
