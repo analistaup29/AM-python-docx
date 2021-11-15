@@ -70,7 +70,7 @@ fecha_corte_compromisos = "21 Sep 2021"
 ###############################################################################
 
 # Creación de carpeta
-dir = os.path.join(proyecto, f"output/AM_{fecha_actual}")
+dir = os.path.join(proyecto, f"output/AM_corta_region/AM_{fecha_actual}")
 if not os.path.exists(dir):
     os.mkdir(dir)
     print("Se creó una nueva carpeta")
@@ -78,7 +78,7 @@ else:
     print("Ya existe la carpeta")
         
 # Path de nueva carpeta
-nueva_carpeta = Path(proyecto/ f"output/AM_{fecha_actual}")
+nueva_carpeta = Path(proyecto/ f"output/AM_corta_region/AM_{fecha_actual}")
 
 ###############################################################################
 # Transformación de Datasets #
@@ -1127,13 +1127,12 @@ de partidas por el monto de S/ ')
 ###########################################################
     
 # Generamos lista de AM.
-lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_{fecha_actual}/*"))
+#lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_corta_region/AM_{fecha_actual}/*"))
 
-lista_regiones = pd.DataFrame (lista_AM)
-lista_regiones.rename( columns={0:'path'}, inplace=True )
-lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
-lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
-lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
-lista_regiones = lista_regiones[["path", "date","region"]]
-
-lista_regiones.to_excel(Path(proyecto, "documentacion", "lista_regiones.xlsx"), index = False)
+#lista_regiones = pd.DataFrame (lista_AM)
+#lista_regiones.rename( columns={0:'path'}, inplace=True )
+#lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
+#lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
+#lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
+#lista_regiones = lista_regiones[["path", "date","region"]]
+#lista_regiones.to_excel(Path(proyecto, "documentacion", "lista_regiones.xlsx"), index = False)
