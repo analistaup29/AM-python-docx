@@ -1629,14 +1629,37 @@ finalidades que se usaban anteriormente.')
 # Creamos tabla con lista de files para enviar por correo #
 ###########################################################
     
-# Generamos lista de AM.
-# lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_region/AM_{fecha_actual}/*"))
+# Generamos dataframe con lista de AM.
+lista_AM = glob.glob(os.path.join(proyecto, f"output/AM_region/AM_{fecha_actual}/*"))
 
-#lista_regiones = pd.DataFrame (lista_AM)
-#lista_regiones.rename( columns={0:'path'}, inplace=True )
-#lista_regiones[['a', 'b', 'c']] = lista_regiones["path"].str.split("AM_", expand = True)
-#lista_regiones[['date', 'e']] = lista_regiones["b"].str.split("/", expand = True)
-#lista_regiones[['region', 'g']] = lista_regiones["c"].str.split("_", expand = True)
-#lista_regiones = lista_regiones[["path", "date","region"]]
+lista_regiones = pd.DataFrame (lista_AM)
+lista_regiones.rename( columns={0:'path'}, inplace=True )
+lista_regiones[['a', 'b', 'c', 'd']] = lista_regiones["path"].str.split("AM_", expand = True)
+lista_regiones[['date', 'e']] = lista_regiones["c"].str.split("/", expand = True)
+lista_regiones[['region', 'g']] = lista_regiones["d"].str.split("_", expand = True)
+lista_regiones = lista_regiones[["path", "date","region"]]
 
-#lista_regiones.to_excel(Path(proyecto, "documentacion", "lista_regiones.xlsx"), index = False)
+## Creamos tabla en excel con datos
+
+# Create a Pandas Excel writer using XlsxWriter as the engine.
+writer = pd.ExcelWriter(Path(proyecto, "documentacion", 'lista_regiones.xlsx'), engine='xlsxwriter')
+
+# Write the dataframe data to XlsxWriter. Turn off the default header and
+# index and skip one row to allow us to insert a user defined header.
+lista_regiones.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False, index=False)
+
+# Get the xlsxwriter workbook and worksheet objects.
+workbook = writer.book
+worksheet = writer.sheets['Sheet1']
+
+# Get the dimensions of the dataframe.
+(max_row, max_col) = lista_regiones.shape
+
+# Create a list of column headers, to use in add_table().
+column_settings = [{'header': column} for column in lista_regiones.columns]
+
+# Add the Excel table structure. Pandas will add the data.
+worksheet.add_table(0, 0, max_row, max_col - 1, {'columns': column_settings})
+
+# Close the Pandas Excel writer and output the Excel file.
+writer.save()
