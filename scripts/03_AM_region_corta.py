@@ -13,13 +13,14 @@ import glob
 import matplotlib.pyplot as plt
 from datetime import datetime
 #from pyprojroot import here
+import pyodbc
 from janitor import clean_names # pip install pyjanitor
 from pathlib import Path
 from docx.shared import Pt
 from docx.shared import Inches
 
 ###############################################################################
-# Rutas de los archivos #
+# Ruta del proyecto #
 ###############################################################################
 
 if getpass.getuser() == "analistaup18": # PC Analista UP 18 Minedu
@@ -28,6 +29,15 @@ if getpass.getuser() == "analistaup18": # PC Analista UP 18 Minedu
 elif  getpass.getuser() == "bran": # PC Brandon
     github = Path("/Users/bran/Documents/GitHub/AM-python-docx")
     proyecto = Path("/Users/bran/Documents/GitHub/AM-python-docx")
+
+
+###############################################################################
+# Conexión a SQL #
+###############################################################################
+
+cnxn = pyodbc.connect(driver='{SQL Server}', server='10.200.2.45', database='db_territorial_upp',
+                      trusted_connection='yes')
+cursor = cnxn.cursor()
 
 ###############################################################################
 # Fechas de corte #
@@ -63,8 +73,6 @@ fecha_corte_mascarillas = "03 Oct 2021"
 # C) Compromisos de desempeño
 fecha_corte_compromisos = "21 Sep 2021"
 
-
-
 ###############################################################################
 # Creación de carpeta donde se guardan los outputs #
 ###############################################################################
@@ -84,13 +92,19 @@ nueva_carpeta = Path(proyecto/ f"output/AM_corta_region/AM_{fecha_actual}")
 # Transformación de Datasets #
 ###############################################################################
 
+
 ##########################
 # Base de disponibilidad 2021 #
 ##########################
-
 # Base de datos región
 ## Cargamos nombres de regiones
 nombre_regiones = pd.read_excel(proyecto / "input/otros/nombre_regiones.xlsx")
+
+# A) Base de disponibilidad
+
+# Cargamos data Disponibilidad
+query = "SELECT * FROM dbo.disponibilidad_presupuestal;"
+base_disponibilidad = pd.read_sql(query, cnxn)
 
 # A) Base de disponibilidad
 ## Cargamos base de disponibilidad
@@ -154,7 +168,7 @@ data_intervenciones_2020 = pd.read_excel(proyecto / "input/am_corta/6. Disponibi
 #######################
 
 ## Cargamos la base insumo de mascarillas
-data_mascarillas = pd.read_excel(proyecto / "input/mascarillas/Incorporación_DU_SIAF_20211108.xlsx", sheet_name='Sheet1')
+data_mascarillas = pd.read_excel(proyecto / "input/mascarillas/Incorporación_DU_SIAF_20211128.xlsx", sheet_name='Sheet1')
 data_mascarillas = clean_names(data_mascarillas) # Normalizamos nombres
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
@@ -924,7 +938,7 @@ for region in lista_regiones:
     #####################################################
     
     document.add_heading("Intervenciones pedagógicas", level=2) # 1) Intervenciones pedagógicas  
-    document.add_heading("Corte: 09/11/2021", level=3)
+    document.add_heading("Corte: 28/11/2021", level=3)
 #    interv_parrafo1 = document.add_paragraph("Al año 2020, la región ")
 #    interv_parrafo1.style = document.styles['Heading 5']
 #    interv_parrafo1.add_run(region)
@@ -941,14 +955,14 @@ for region in lista_regiones:
 #    interv_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
 
     
-    interv_parrafo2 = document.add_paragraph("Al año 2021, la región ")
+    interv_parrafo2 = document.add_paragraph("Al año 2021, el pliego de la región ")
     interv_parrafo2.style = document.styles['Heading 5']
     interv_parrafo2.add_run(region)
     interv_parrafo2.add_run(" inició con un PIA de S/")
     interv_parrafo2.add_run(pia_intervenciones_region_2021)
     interv_parrafo2.add_run(". En el transcurso del año fiscal, se han realizado cuatro (04) transferencias para complementar el financiamiento de las intervenciones pedagógicas, por un monto total de S/ ")
     interv_parrafo2.add_run(transferencia_region_2021)
-    interv_parrafo2.add_run(". Al 9 de noviembre")
+    interv_parrafo2.add_run(". Al 28 de noviembre")
     interv_parrafo2.add_run(" cuentan con S/ ")
     interv_parrafo2.add_run(pim_intervenciones_region_2021)
     interv_parrafo2.add_run(" en su PIM. De los cuales se han ejecutado el ")
@@ -961,7 +975,7 @@ for region in lista_regiones:
     #####################################################
     
     document.add_heading("Compromisos de desempeño", level=2)
-    document.add_heading("Corte: 09/11/2021", level=3)
+    document.add_heading("Corte: 28/11/2021", level=3)
     cdd_parrafo1 = document.add_paragraph("En el marco de la Norma Técnica para la implementación del mecanismo denominado Compromisos de Desempeño 2021, aprobada por Resolución Ministerial N° 042-2021-MINEDU y modificada por la Resolución Ministerial N° 160-2021-MINEDU, se han realizado transferencias de partidas a favor de las Unidades Ejecutoras de Educación del Gobierno Regional de  ")
     cdd_parrafo1.style = document.styles['Heading 5']
     cdd_parrafo1.add_run(region)
@@ -1109,12 +1123,24 @@ de partidas por el monto de S/ ')
     
     document.add_heading("Deudas Sociales", level=2)
     
-    deuda_parrafo1 = document.add_paragraph("Mediante el Decreto Supremo N° 216-2021-EF se transfirió S/ ")
+    deuda_parrafo1 = document.add_paragraph(' La atención de la deuda social \
+con el Sector se viene efectuando a través de transferencias de \
+partidas del Tesoro Público; es decir, en forma complementaria a \
+los recursos presupuestales con que disponen los Pliegos del Gobierno Nacional \
+y los Gobiernos Regionales, para la atención del pago de sentencias judiciales \
+en calidad de cosa juzgada y en ejecución. Dicho tratamiento, \
+se realiza desde el año 2014 en el marco de las Leyes Anuales de Presupuesto, \
+habiéndose autorizado diversas habilitaciones presupuestarias \
+en el nivel institucional mediante los decretos supremos correspondientes. ')
+    deuda_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
     deuda_parrafo1.style = document.styles['Heading 5']
-    deuda_parrafo1.add_run(monto_deuda)
-    deuda_parrafo1.add_run(" a la región ")
-    deuda_parrafo1.add_run(region)
-    deuda_parrafo1.add_run(".")
+    
+    deuda_parrafo2 = document.add_paragraph("Mediante el Decreto Supremo N° 216-2021-EF se transfirió S/ ")
+    deuda_parrafo2.style = document.styles['Heading 5']
+    deuda_parrafo2.add_run(monto_deuda)
+    deuda_parrafo2.add_run(" a la región ")
+    deuda_parrafo2.add_run(region)
+    deuda_parrafo2.add_run(".")
     
     #######################
     # Guardamos documento #
