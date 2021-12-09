@@ -49,24 +49,24 @@ nueva_carpeta = Path(proyecto/ f"output/AM_testeo_grafico/AM_{fecha_actual}")
 ## A) Base disponibilidad ----------------------------------------------------
 
 # Importamos los nombres de los archivos en la carpeta intervenciones pedagogicas
-lista_archivos_int = glob.glob(os.path.join(proyecto,"input/intervenciones_pedagogicas/*"))
+#lista_archivos_int = glob.glob(os.path.join(proyecto,"input/intervenciones_pedagogicas/*"))
 #Mantenemos el corte de disponibilidad más reciente
-fecha_corte_disponibilidad = max(lista_archivos_int, key=os.path.getctime)
+#fecha_corte_disponibilidad = max(lista_archivos_int, key=os.path.getctime)
 # Nos quedamos con el nombre de archivo para la base de disponibilidad
-fecha_corte_disponibilidad = os.path.split(fecha_corte_disponibilidad)
-fecha_corte_disponibilidad = fecha_corte_disponibilidad[1]
+#fecha_corte_disponibilidad = os.path.split(fecha_corte_disponibilidad)
+#fecha_corte_disponibilidad = fecha_corte_disponibilidad[1]
 # Extraemos la fecha del nombre de archivo
-fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_corte_disponibilidad)
+#fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_corte_disponibilidad)
 # Convertimos a formato string
-fecha_corte_disponibilidad = ''.join(fecha_corte_disponibilidad) 
+#fecha_corte_disponibilidad = ''.join(fecha_corte_disponibilidad) 
 # Convertimos a formato numérico
-fecha_corte_disponibilidad_date = datetime.strptime(fecha_corte_disponibilidad, '%Y%m%d').date()
-mes_disponibilidad = fecha_corte_disponibilidad_date.month
+#fecha_corte_disponibilidad_date = datetime.strptime(fecha_corte_disponibilidad, '%Y%m%d').date()
+#mes_disponibilidad = fecha_corte_disponibilidad_date.month
 # Damos estilo
-fecha_corte_disponibilidad_date = fecha_corte_disponibilidad_date.strftime("%d %b %Y")
+#fecha_corte_disponibilidad_date = fecha_corte_disponibilidad_date.strftime("%d %b %Y")
 
-data_intervenciones = pd.read_excel(proyecto / f"input/intervenciones_pedagogicas/Disponibilidad_Presupuestal_{fecha_corte_disponibilidad}interv.xlsx")
-data_intervenciones = clean_names(data_intervenciones) # Normalizamos nombres
+#data_intervenciones = pd.read_excel(proyecto / f"input/intervenciones_pedagogicas/Disponibilidad_Presupuestal_{fecha_corte_disponibilidad}interv.xlsx")
+#data_intervenciones = clean_names(data_intervenciones) # Normalizamos nombres
 
 
 lista_regiones = ["AMAZONAS", "ANCASH", "APURIMAC", "AREQUIPA", "AYACUCHO", "CAJAMARCA", "CUSCO", "HUANCAVELICA", "HUANUCO", "ICA", "JUNIN", "LA LIBERTAD", "LAMBAYEQUE", "LORETO", "MADRE DE DIOS", "MOQUEGUA", "PASCO", "PIURA", "PUNO", "SAN MARTIN", "TACNA", "TUMBES", "UCAYALI", "LIMA PROVINCIAS", "CALLAO"]
@@ -74,9 +74,9 @@ lista_regiones = ["AMAZONAS", "ANCASH", "APURIMAC", "AREQUIPA", "AYACUCHO", "CAJ
 for region in lista_regiones:
 
     # Obtener PIM
-    region_seleccionada = data_intervenciones['region'] == region #Seleccionar region
-    tabla_intervenciones = data_intervenciones[region_seleccionada]   
-    pia_intervenciones_region_2021 = str('{:,.0f}'.format(tabla_intervenciones["pia"].sum()))
+    #region_seleccionada = data_intervenciones['region'] == region #Seleccionar region
+    #tabla_intervenciones = data_intervenciones[region_seleccionada]   
+    #pia_intervenciones_region_2021 = str('{:,.0f}'.format(tabla_intervenciones["pia"].sum()))
     
     # Gráfico
     
