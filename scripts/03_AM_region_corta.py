@@ -26,18 +26,18 @@ from docx.shared import Inches
 if getpass.getuser() == "analistaup18": # PC Analista UP 18 Minedu
     github = Path("C:/Users/ANALISTAUP18/Documents/GitHub/AM-python-docx")
     proyecto = Path("B:/OneDrive - Ministerio de Educación/unidad_B/2021/4. Herramientas de Seguimiento/13.AM_automatizada")
-elif  getpass.getuser() == "bran": # PC Brandon
-    github = Path("/Users/bran/Documents/GitHub/AM-python-docx")
-    proyecto = Path("/Users/bran/Documents/GitHub/AM-python-docx")
+elif  getpass.getuser() == "VLADIMIR": # PC Brandon
+    github = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
+    proyecto = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
 
 
 ###############################################################################
 # Conexión a SQL #
 ###############################################################################
 
-cnxn = pyodbc.connect(driver='{SQL Server}', server='10.200.2.45', database='db_territorial_upp',
-                      trusted_connection='yes')
-cursor = cnxn.cursor()
+#cnxn = pyodbc.connect(driver='{SQL Server}', server='10.200.2.45', database='db_territorial_upp',
+                      #trusted_connection='yes')
+#cursor = cnxn.cursor()
 
 ###############################################################################
 # Fechas de corte #
@@ -103,8 +103,8 @@ nombre_regiones = pd.read_excel(proyecto / "input/otros/nombre_regiones.xlsx")
 # A) Base de disponibilidad
 
 # Cargamos data Disponibilidad
-query = "SELECT * FROM dbo.disponibilidad_presupuestal;"
-base_disponibilidad = pd.read_sql(query, cnxn)
+#query = "SELECT * FROM dbo.disponibilidad_presupuestal;"
+#base_disponibilidad = pd.read_sql(query, cnxn)
 
 # A) Base de disponibilidad
 ## Cargamos base de disponibilidad

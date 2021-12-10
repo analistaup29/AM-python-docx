@@ -22,9 +22,9 @@ from pathlib import Path
 if getpass.getuser() == "analistaup29": # PC Analista UP 29 Minedu
     github = Path("C:/Users/ANALISTAUP29/Documents/GitHub/AM-python-docx")
     proyecto = Path("B:/OneDrive - Ministerio de Educación/unidad_B/2021/4. Herramientas de Seguimiento/13.AM_automatizada")
-elif  getpass.getuser() == "bran": # PC Brandon
-    github = Path("/Users/bran/Documents/GitHub/AM-python-docx")
-    proyecto = Path("/Users/bran/Documents/GitHub/AM-python-docx")
+elif  getpass.getuser() == "VLADIMIR": # PC Brandon
+    github = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
+    proyecto = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
 
 
 ###############################################################################
