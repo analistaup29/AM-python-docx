@@ -3,9 +3,9 @@ Este repositorio contiene el código para el proyecto de automatización de la A
 
 ## Contenido
 
--[Scripts](https://github.com/vladi3101/AM-python-docx/tree/main/scripts)
--[Input](https://github.com/vladi3101/AM-python-docx/tree/main/input)
--[Output](https://github.com/vladi3101/AM-python-docx/tree/main/output)
+- [Scripts](https://github.com/vladi3101/AM-python-docx/tree/main/scripts)
+- [Input](https://github.com/vladi3101/AM-python-docx/tree/main/input)
+- [Output](https://github.com/vladi3101/AM-python-docx/tree/main/output)
 
 ## Estructura del proyecto
 
