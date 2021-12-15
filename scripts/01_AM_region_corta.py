@@ -26,6 +26,10 @@ from docx.shared import Inches
 if getpass.getuser() == "analistaup29": # PC Analista UP 18 Minedu
     github = Path("C:/Users/ANALISTAUP29/Documents/GitHub/AM-python-docx")
     proyecto = Path("B:/OneDrive - Ministerio de Educación/unidad_B/2021/4. Herramientas de Seguimiento/13.AM_automatizada")
+elif getpass.getuser() == "VLADIMIR": # PC Analista UP 18 Minedu
+    github = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
+    proyecto = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
+                    
 elif  getpass.getuser() == "bran": # PC Brandon
     github = Path("/Users/bran/GitHub/AM-python-docx")
     proyecto = Path("/Users/bran/GitHub/AM-python-docx")
@@ -128,7 +132,7 @@ data_intervenciones['avance_costo'] = data_intervenciones['avance_costo'].fillna
 #######################
 
 ## Cargamos la base insumo de mascarillas
-data_mascarillas = pd.read_excel(proyecto / f"input/mascarillas/Incorporación_DU_SIAF_{fecha_corte_mascarillas}.xlsx", sheet_name='Sheet1')
+data_mascarillas = pd.read_excel(proyecto / f"input/mascarillas/Incorporación_DU_SIAF_{fecha_corte_mascarillas}.xlsx", sheet_name='Sheet1')
 data_mascarillas = clean_names(data_mascarillas) # Normalizamos nombres
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
@@ -152,7 +156,7 @@ data_mascarillas["DEVENGADO (%)"]=data_mascarillas["devengado"]/data_mascarillas
 ## Cargamos data de compromisos de desempeño
 data_cdd = pd.read_excel(proyecto / f"input/compromisos_desempeno/regiones_BD_CDD_{fecha_corte_compromisos}.xlsx")
 data_cdd = clean_names(data_cdd) # Normalizamos nombres
-data_cdd["pliego"] = data_cdd["pliego"].str.split(". ", n=1, expand = True)
+data_cdd["pliego"] = data_cdd["pliego"].str.split(".", n=1, expand = True)
 data_cdd['pliego'] = data_cdd['pliego'].astype('int64') # Convertimos ubigeo a integer
 
 # Corregimos genericas
