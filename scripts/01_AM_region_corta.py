@@ -28,8 +28,7 @@ if getpass.getuser() == "analistaup29": # PC Analista UP 18 Minedu
     proyecto = Path("B:/OneDrive - Ministerio de Educación/unidad_B/2021/4. Herramientas de Seguimiento/13.AM_automatizada")
 elif getpass.getuser() == "VLADIMIR": # PC Analista UP 18 Minedu
     github = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
-    proyecto = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")
-                    
+    proyecto = Path("C:/Users/VLADIMIR/Documents/GitHub/AM-python-docx")                    
 elif  getpass.getuser() == "bran": # PC Brandon
     github = Path("/Users/bran/GitHub/AM-python-docx")
     proyecto = Path("/Users/bran/GitHub/AM-python-docx")
@@ -655,18 +654,18 @@ for region in lista_regiones:
     # Carátula del documento #
     ###########################################################################
 
-    document.add_picture(f"/Users/bran/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
+    #document.add_picture(f"/Users/bran/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
     
     # --- add a 2 x 2 table as an example ---
-    table = document.add_table(rows=2, cols=2)
+   # table = document.add_table(rows=2, cols=2)
     # --- get the first cell of the first row ---
-    cell = table.rows[0].cells[0]
+    #cell = table.rows[0].cells[0]
     # --- by default a cell has one paragraph with zero runs ---
-    paragraph = cell.paragraphs[0]
+    #paragraph = cell.paragraphs[0]
     # --- add a run in which to place the picture ---
-    run2 = paragraph.add_run()
+    #run2 = paragraph.add_run()
     # --- add the picture to that run ---
-    run2.add_picture(f"/Users/bran/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
+    #run2.add_picture(f"/Users/bran/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
         
     #####################################################
     # Incluimos sección 1 de intervenciones pedagógicas #
