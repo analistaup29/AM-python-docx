@@ -334,7 +334,6 @@ data_bloqueo = data_bloqueo.rename(columns={'descreg':'region'})
 
 
 
-
 #data_cdd_2021 = pd.read_excel(proyecto / "input/am_corta/03. CDD_20211109.xlsx", sheet_name="Sheet1")
 #data_cdd_2021 = clean_names(data_cdd_2021) # Normalizamos nombres
 
