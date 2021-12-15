@@ -23,21 +23,12 @@ from docx.shared import Inches
 # Ruta del proyecto #
 ###############################################################################
 
-if getpass.getuser() == "analistaup18": # PC Analista UP 18 Minedu
-    github = Path("C:/Users/ANALISTAUP18/Documents/GitHub/AM-python-docx")
+if getpass.getuser() == "analistaup29": # PC Analista UP 18 Minedu
+    github = Path("C:/Users/ANALISTAUP29/Documents/GitHub/AM-python-docx")
     proyecto = Path("B:/OneDrive - Ministerio de Educación/unidad_B/2021/4. Herramientas de Seguimiento/13.AM_automatizada")
 elif  getpass.getuser() == "bran": # PC Brandon
-    github = Path("/Users/bran/Documents/GitHub/AM-python-docx")
-    proyecto = Path("/Users/bran/Documents/GitHub/AM-python-docx")
-
-
-###############################################################################
-# Conexión a SQL #
-###############################################################################
-
-cnxn = pyodbc.connect(driver='{SQL Server}', server='10.200.2.45', database='db_territorial_upp',
-                      trusted_connection='yes')
-cursor = cnxn.cursor()
+    github = Path("/Users/bran/GitHub/AM-python-docx")
+    proyecto = Path("/Users/bran/GitHub/AM-python-docx")
 
 ###############################################################################
 # Fechas de corte #
@@ -49,29 +40,14 @@ lista_archivos = os.listdir(Path(proyecto, "input", "intervenciones_pedagogicas"
 # Fecha de hoy
 fecha_actual = datetime.today().strftime('%d-%m-%y')
 
-## A) Base disponibilidad
-# Importamos los nombres de los archivos en la carpeta intervenciones pedagogicas
-lista_archivos_int = glob.glob(os.path.join(proyecto,"input/intervenciones_pedagogicas/*"))
-#Mantenemos el corte de disponibilidad más reciente
-fecha_corte_disponibilidad = max(lista_archivos_int, key=os.path.getctime)
-# Nos quedamos con el nombre de archivo para la base de disponibilidad
-fecha_corte_disponibilidad = os.path.split(fecha_corte_disponibilidad)
-fecha_corte_disponibilidad = fecha_corte_disponibilidad[1]
-# Extraemos la fecha del nombre de archivo
-fecha_corte_disponibilidad = nums_from_string.get_numeric_string_tokens(fecha_corte_disponibilidad)
-# Convertimos a formato string
-fecha_corte_disponibilidad = ''.join(fecha_corte_disponibilidad) 
-# Convertimos a formato numérico
-fecha_corte_disponibilidad_date = datetime.strptime(fecha_corte_disponibilidad, '%Y%m%d').date()
-mes_disponibilidad = fecha_corte_disponibilidad_date.month
-# Damos estilo
-fecha_corte_disponibilidad_date = fecha_corte_disponibilidad_date.strftime("%d %b %Y")
+## A) Fecha disponibilidad
+fecha_corte_disponibilidad = "20211128"
 
 ## B) Siaf de mascarillas
-fecha_corte_mascarillas = "03 Oct 2021"
+fecha_corte_mascarillas = "20211128"
 
 # C) Compromisos de desempeño
-fecha_corte_compromisos = "21 Sep 2021"
+fecha_corte_compromisos = "20211128"
 
 ###############################################################################
 # Creación de carpeta donde se guardan los outputs #
@@ -92,19 +68,12 @@ nueva_carpeta = Path(proyecto/ f"output/AM_corta_region/AM_{fecha_actual}")
 # Transformación de Datasets #
 ###############################################################################
 
-
 ##########################
 # Base de disponibilidad 2021 #
 ##########################
 # Base de datos región
 ## Cargamos nombres de regiones
 nombre_regiones = pd.read_excel(proyecto / "input/otros/nombre_regiones.xlsx")
-
-# A) Base de disponibilidad
-
-# Cargamos data Disponibilidad
-query = "SELECT * FROM dbo.disponibilidad_presupuestal;"
-base_disponibilidad = pd.read_sql(query, cnxn)
 
 # A) Base de disponibilidad
 ## Cargamos base de disponibilidad
@@ -153,22 +122,13 @@ data_intervenciones.replace([np.inf, -np.inf], np.nan, inplace=True)
 data_intervenciones['avance_pim'] = data_intervenciones['avance_pim'].fillna("0").astype(float)
 data_intervenciones['avance_costo'] = data_intervenciones['avance_costo'].fillna("0").astype(float)
 
-# Tabla intervenciones CAS
-#data_intervenciones_cas = data_intervenciones[data_intervenciones['cas_no_cas'] != "NO CAS"]
-# Tabla intervenciones NO CAS
-#data_intervenciones_nocas = data_intervenciones[data_intervenciones['cas_no_cas'] != "CAS"]
-
-##########################
-# Base de disponibilidad 2020 #
-##########################
-data_intervenciones_2020 = pd.read_excel(proyecto / "input/am_corta/6. Disponibilidad_Presupuestal_20201231.xlsx", sheet_name="Sheet1")
 
 #######################
 # Siaf de mascarillas #
 #######################
 
 ## Cargamos la base insumo de mascarillas
-data_mascarillas = pd.read_excel(proyecto / "input/mascarillas/Incorporación_DU_SIAF_20211128.xlsx", sheet_name='Sheet1')
+data_mascarillas = pd.read_excel(proyecto / f"input/mascarillas/Incorporación_DU_SIAF_{fecha_corte_mascarillas}.xlsx", sheet_name='Sheet1')
 data_mascarillas = clean_names(data_mascarillas) # Normalizamos nombres
 
 # Mantenemos variables de interés (transferencia,  CERTIFICADO, COMPROMETIDO y DEVENGADO) y 
@@ -190,7 +150,7 @@ data_mascarillas["DEVENGADO (%)"]=data_mascarillas["devengado"]/data_mascarillas
 ############################
 
 ## Cargamos data de compromisos de desempeño
-data_cdd = pd.read_excel(proyecto / "input/compromisos_desempeno/regiones_BD_CDD.xlsx")
+data_cdd = pd.read_excel(proyecto / f"input/compromisos_desempeno/regiones_BD_CDD_{fecha_corte_compromisos}.xlsx")
 data_cdd = clean_names(data_cdd) # Normalizamos nombres
 data_cdd["pliego"] = data_cdd["pliego"].str.split(". ", n=1, expand = True)
 data_cdd['pliego'] = data_cdd['pliego'].astype('int64') # Convertimos ubigeo a integer
@@ -354,16 +314,11 @@ data_bloqueo = data_bloqueo.rename(columns={'descreg':'region'})
 #data_deuda_social = clean_names(data_deuda_social) # Normalizamos nombres
 
 ###############################################################################
-# Gráficos
-###############################################################################
-
-
-###############################################################################
 # Nuevos cálculos
 ###############################################################################
 
-data_inversiones = pd.read_excel(proyecto / "input/am_corta/01. Transferencias inversiones.xlsx", sheet_name="Análisis2", skiprows=4)
-data_inversiones = clean_names(data_inversiones) # Normalizamos nombres
+#data_inversiones = pd.read_excel(proyecto / "input/am_corta/01. Transferencias inversiones.xlsx", sheet_name="Análisis2", skiprows=4)
+#data_inversiones = clean_names(data_inversiones) # Normalizamos nombres
 
 #monto_pia_2020 = "monto"
 #monto_pim_2020 = "monto"
@@ -371,8 +326,14 @@ data_inversiones = clean_names(data_inversiones) # Normalizamos nombres
 #avance_2020 = "monto"
 #monto_transferido_2020 = "monto"
 
-data_kit_lavamanos = pd.read_excel(proyecto / "input/am_corta/02. Kit de higiene y lavamanos.xlsx", sheet_name="Análisis", skiprows=5)
-data_kit_lavamanos = clean_names(data_kit_lavamanos) # Normalizamos nombres
+#data_kit_lavamanos = pd.read_excel(proyecto / "input/am_corta/02. Kit de higiene y lavamanos.xlsx", sheet_name="Análisis", skiprows=5)
+#data_kit_lavamanos = clean_names(data_kit_lavamanos) # Normalizamos nombres
+
+
+
+
+
+
 
 #data_cdd_2021 = pd.read_excel(proyecto / "input/am_corta/03. CDD_20211109.xlsx", sheet_name="Sheet1")
 #data_cdd_2021 = clean_names(data_cdd_2021) # Normalizamos nombres
@@ -391,7 +352,6 @@ data_cdd_2021 = clean_names(data_cdd_2021) # Normalizamos nombres
 # Asignaciones temporales
 data_asignaciones_2021 = pd.read_excel(proyecto / "input/am_corta/08. Asignaciones Temporales.xlsx", sheet_name="Sheet2")
 
-
 #Deuda social
 
 data_deuda = pd.read_excel(proyecto / "input/am_corta/00b_Deudas sociales.xlsx", sheet_name="Base", skiprows=1)
@@ -407,6 +367,7 @@ data_conceptos_remunerativos_2021 = clean_names(data_conceptos_remunerativos_202
 ## Beneficios sociales
 data_beneficios_sociales_2021 = pd.read_excel(proyecto / "input/am_corta/09. Beneficios sociales.xlsx", sheet_name="TD_BS", skiprows=2)
 data_beneficios_sociales_2021 = clean_names(data_beneficios_sociales_2021)
+
 
 ###############################################################################
 # Creación del documento en docx 
@@ -434,11 +395,6 @@ for region in lista_regiones:
     ds_072_beneficios = str('{:,.0f}'.format(data_beneficios_region.iloc[0]['transferencia_072']))
     ds_256_beneficios = str('{:,.0f}'.format(data_beneficios_region.iloc[0]['transferencia_256']))
     
-    costo_beneficios_c = data_beneficios_region.iloc[0]['costo_beneficios']
-    pia_beneficios_c = data_beneficios_region.iloc[0]['pia_beneficios']
-    ds_072_beneficios_c = data_beneficios_region.iloc[0]['transferencia_072']
-    ds_256_beneficios_c = data_beneficios_region.iloc[0]['transferencia_256']
-
     ############################################
     # Tablas e indicadores conceptos remunerativos #
     ############################################
@@ -482,7 +438,6 @@ for region in lista_regiones:
     ############################################
     # Tablas e indicadores Deuda Social #
     ############################################
-    
  
     region_seleccionada = data_deuda['region'] == region #Seleccionar region
     
@@ -506,38 +461,32 @@ for region in lista_regiones:
     # Tablas e indicadores kit/lavamanos #
     ############################################
 
-    region_seleccionada = data_kit_lavamanos['region'] == region #Seleccionar region
+#    region_seleccionada = data_kit_lavamanos['region'] == region #Seleccionar region
 
-    data_region_kit = data_kit_lavamanos[region_seleccionada]
-    monto_region_kit = str('{:,.0f}'.format(data_region_kit.iloc[0]['kit_de_higiene_transferencia']))
-    monto_region_kit_c = data_region_kit.iloc[0]['kit_de_higiene_transferencia']
-    
-    data_region_lavamanos = data_kit_lavamanos[region_seleccionada]
-    monto_region_lavamanos = str('{:,.0f}'.format(data_region_lavamanos.iloc[0]['lavamanos_transferencia']))
-    monto_region_lavamanos_c = data_region_lavamanos.iloc[0]['lavamanos_transferencia']
-    
-    avance_kit = data_kit_lavamanos[region_seleccionada]
-    avance_kit = str('{:,.0f}'.format(avance_kit.iloc[0]['kit_de_higiene_declaracion']))
-
-    avance_lavamanos = data_kit_lavamanos[region_seleccionada]
-    avance_lavamanos = str('{:,.0f}'.format(avance_lavamanos.iloc[0]['lavamanos_declaracion']))
+#    data_region_kit = data_kit_lavamanos[region_seleccionada]
+#    monto_region_kit = str('{:,.0f}'.format(data_region_kit.iloc[0]['kit_de_higiene_transferencia']))
+#    monto_region_kit_c = data_region_kit.iloc[0]['kit_de_higiene_transferencia']
+#    data_region_lavamanos = data_kit_lavamanos[region_seleccionada]
+#    monto_region_lavamanos = str('{:,.0f}'.format(data_region_lavamanos.iloc[0]['lavamanos_transferencia']))
+#    monto_region_lavamanos_c = data_region_lavamanos.iloc[0]['lavamanos_transferencia']
+#    avance_kit = data_kit_lavamanos[region_seleccionada]
+#    avance_kit = str('{:,.0f}'.format(avance_kit.iloc[0]['kit_de_higiene_declaracion']))
+#    avance_lavamanos = data_kit_lavamanos[region_seleccionada]
+#    avance_lavamanos = str('{:,.0f}'.format(avance_lavamanos.iloc[0]['lavamanos_declaracion']))
 
     
     ############################################
     # Tablas e indicadores base inversiones #
     ############################################
     
-    region_seleccionada = data_inversiones['region'] == region #Seleccionar region
-    
-    data_region_inversiones = data_inversiones[region_seleccionada]
-    monto_region_inversiones_c = data_region_inversiones.iloc[0]['monto_inversiones'] # Valor numérico
-    monto_region_inversiones = str('{:,.0f}'.format(data_region_inversiones.iloc[0]['monto_inversiones']))
-    
-    fila1 = data_inversiones[region_seleccionada]
-    fila1 = str(fila1.iloc[0]['texto_1'])
-
-    fila2 = data_inversiones[region_seleccionada]
-    fila2 = str(fila2.iloc[0]['texto_2']) 
+#   region_seleccionada = data_inversiones['region'] == region #Seleccionar region
+#    data_region_inversiones = data_inversiones[region_seleccionada]
+#    monto_region_inversiones_c = data_region_inversiones.iloc[0]['monto_inversiones'] # Valor numérico
+#    monto_region_inversiones = str('{:,.0f}'.format(data_region_inversiones.iloc[0]['monto_inversiones']))
+#    fila1 = data_inversiones[region_seleccionada]
+#    fila1 = str(fila1.iloc[0]['texto_1'])
+#    fila2 = data_inversiones[region_seleccionada]
+#    fila2 = str(fila2.iloc[0]['texto_2']) 
     
     ############################################
     # Tablas e indicadores base disponibilidad #
@@ -553,7 +502,6 @@ for region in lista_regiones:
     porcentaje_costomesactual = str('{:,.1%}'.format(tabla_intervenciones[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones["costo_actual"].sum()))
     transferencia_region_2021 = str('{:,.0f}'.format(tabla_intervenciones["transferencia"].sum()))
     transferencia_region_2021_c = tabla_intervenciones["transferencia"].sum()
-
     
     # TOTAL
     tabla_intervenciones_formato = data_intervenciones[region_seleccionada]
@@ -561,80 +509,6 @@ for region in lista_regiones:
     # Generamos porcentaje de avance
     porcentaje_ejecucion_a = tabla_intervenciones_formato[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
     porcentaje_costomesactual_a = tabla_intervenciones_formato[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato["costo_actual"].sum()
-    
-    # Generamos fila total
-    total_int = tabla_intervenciones_formato.groupby(by = ["region"], as_index=False).sum()
-
-    # Realizamos append del total en la tabla
-    tabla_intervenciones_formato = tabla_intervenciones_formato.append(total_int, ignore_index=True)
-
-    # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
-    tabla_intervenciones_formato.iloc[-1, tabla_intervenciones_formato.columns.get_loc('avance_pim')] = porcentaje_ejecucion_a
-    tabla_intervenciones_formato.iloc[-1, tabla_intervenciones_formato.columns.get_loc('avance_costo')] = porcentaje_costomesactual_a
-
-    #Incluimos palabra "total" y "-" en vez de NaN
-    tabla_intervenciones_formato['intervencion_pedagogica'] = tabla_intervenciones_formato['intervencion_pedagogica'].fillna("Total")
-    tabla_intervenciones_formato['avance_pim'] = tabla_intervenciones_formato['avance_pim'].fillna("0").astype(float)
-    tabla_intervenciones_formato['avance_costo'] = tabla_intervenciones_formato['avance_costo'].fillna("0").astype(float)
-    
-
-    # CAS
-    #tabla_intervenciones_formato_cas = data_intervenciones_cas[region_seleccionada]
-    
-    # Generamos porcentaje de avance CAS
-    #porcentaje_ejecucion_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
-    #porcentaje_costomesactual_cas = tabla_intervenciones_formato_cas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_cas["costo_actual"].sum()
-    
-    # Generamos fila total
-    #total_int_cas = tabla_intervenciones_formato_cas.groupby(by = ["region"], as_index=False).sum()
-    
-    # Realizamos append del total en la tabla
-    #tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.append(total_int_cas, ignore_index=True)
-    
-    # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
-    #tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_cas
-    #tabla_intervenciones_formato_cas.iloc[-1, tabla_intervenciones_formato_cas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_cas
-    
-    #Incluimos palabra "total" y "-" en vez de NaN
-    #tabla_intervenciones_formato_cas['intervencion_pedagogica'] = tabla_intervenciones_formato_cas['intervencion_pedagogica'].fillna("Total")
-    #tabla_intervenciones_formato_cas['avance_pim'] = tabla_intervenciones_formato_cas['avance_pim'].fillna("0").astype(float)
-    #tabla_intervenciones_formato_cas['avance_costo'] = tabla_intervenciones_formato_cas['avance_costo'].fillna("0").astype(float)
-    
-    # NO CAS
-    #tabla_intervenciones_formato_nocas = data_intervenciones_nocas[region_seleccionada]
-    
-    # Generamos porcentaje de avance NO CAS
-    #porcentaje_ejecucion_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas[f"pim_reporte_siaf_{fecha_corte_disponibilidad}"].sum()
-    #porcentaje_costomesactual_nocas = tabla_intervenciones_formato_nocas[f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}"].sum()/tabla_intervenciones_formato_nocas["costo_actual"].sum()
-    
-    # Generamos fila total
-    #total_int_nocas = tabla_intervenciones_formato_nocas.groupby(by = ["region"], as_index=False).sum()
-    # Realizamos append del total en la tabla
-    #tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.append(total_int_nocas, ignore_index=True)
-    
-    # Reemplazamos % de avance pim y avance costo por los valores correctos en fila total
-    #tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_pim')] = porcentaje_ejecucion_nocas
-    #tabla_intervenciones_formato_nocas.iloc[-1, tabla_intervenciones_formato_nocas.columns.get_loc('avance_costo')] = porcentaje_costomesactual_nocas
-    
-    #Incluimos palabra "total" y "-" en vez de NaN
-    #tabla_intervenciones_formato_nocas['intervencion_pedagogica'] = tabla_intervenciones_formato_nocas['intervencion_pedagogica'].fillna("Total")
-    #tabla_intervenciones_formato_nocas['avance_pim'] = tabla_intervenciones_formato_nocas['avance_pim'].fillna("0").astype(float)
-    #tabla_intervenciones_formato_nocas['avance_costo'] = tabla_intervenciones_formato_nocas['avance_costo'].fillna("0").astype(float)
-    
-    # Formato para la tabla
-    formato_tabla_intervenciones = {
-        "intervencion_pedagogica" : "{}",
-        f"pim_reporte_siaf_{fecha_corte_disponibilidad}": "{:,.0f}",
-        f"comprometido_anual_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
-        f"presupuesto_devengado_reporte_siaf_{fecha_corte_disponibilidad}" : "{:,.0f}",
-    #    "avance_pim": "{:,.1%}",
-    #    "costo_actual": "{:,.0f}",
-        "avance_costo": "{:,.1%}",
-        }
-    #tabla_intervenciones_formato_cas = tabla_intervenciones_formato_cas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
-    #tabla_intervenciones_formato_nocas = tabla_intervenciones_formato_nocas.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
-
-    tabla_intervenciones_formato = tabla_intervenciones_formato.transform({k: v.format for k, v in formato_tabla_intervenciones.items()})            
     
     ############################################
     # Tablas e indicadores mascarillas #
@@ -649,18 +523,6 @@ for region in lista_regiones:
     transferencia_mascarilla_c = tabla_mascarillas["transferencia"].sum()
     transferencia_mascarilla_millones = str('{:,.1f}'.format(tabla_mascarillas["transferencia"].sum()/1000000))
     devengado_mascarillas=str('{:.1%}'.format(tabla_mascarillas["devengado"].sum()/tabla_mascarillas["transferencia"].sum()))
-    # Generamos la tabla "tabla_mascarillas_formato" - mantiene la región i de la lista de regiones
-    tabla_mascarillas_formato = data_mascarillas[region_seleccionada]
-    # Formato para la tabla
-    formato_tabla_mascarillas = {
-        "UNIDAD EJECUTORA": "{}",
-        "RECURSOS TRANSF. (*)": "{:,.0f}",
-        "PIM" : "{:,.0f}",
-        "CERT. (%)" : "{:.1%}",
-        "COMPRO. (%)": "{:.1%}",
-        "DEVENGADO (%)": "{:.1%}",  
-        }
-    tabla_mascarillas_formato = tabla_mascarillas_formato.transform({k: v.format for k, v in formato_tabla_mascarillas.items()})  
     
     #################################################
     # Tablas e indicadores compromisos de desempeño #
@@ -677,26 +539,7 @@ for region in lista_regiones:
     
     # Realizamos append del total en la tabla
     tabla_cdd = tabla_cdd.append(total_cdd, ignore_index=True)
-    
-    #Incluimos palabra "total" y "-" en vez de NaN
-    tabla_cdd['programa_presupuestal'] = tabla_cdd['programa_presupuestal'].fillna("Total")
-    tabla_cdd['generica'] = tabla_cdd['generica'].fillna("-")
-
-     # Generamos la tabla con formato
-    formato_tabla_cdd = {
-        "programa_presupuestal": "{}",
-        "generica": "{}",
-        "monto": "{:,.0f}",
-        "ds_085_2021_ef": "{:,.0f}",
-        "ds_218_2021_ef": "{:,.0f}",
-        "ds_220_2021_ef": "{:,.0f}",
-        }
-    tabla_cdd_formato = tabla_cdd
-    tabla_cdd_formato = tabla_cdd_formato.transform({k: v.format for k, v in formato_tabla_cdd.items()})            
-    
-    # Generamos CDD transferido 
-    cdd_transferido = str('{:,.0f}'.format(tabla_cdd["monto"].sum()))
-   
+       
     ########################
     # Tablas Encargaturas #
     ########################
@@ -710,25 +553,6 @@ for region in lista_regiones:
     ds_217 = str('{:,.0f}'.format(tabla1['TRANSFERENCIA POR DS N° 217-2021-EF'].sum()))
     ds_217_c = tabla1['TRANSFERENCIA POR DS N° 217-2021-EF'].sum()
     
-    tabla_encargaturas_resumen = tabla1.groupby(['UNIDAD EJECUTORA'], as_index=False).sum()
-    tabla_encargaturas_resumen = tabla_encargaturas_resumen[['UNIDAD EJECUTORA',
-                                                             'COSTO', 
-                                                             'PROGRAMADO POR MINEDU', 
-                                                             'PROGRAMADO POR EL PLIEGO REGIONAL',
-                                                             'TRANSFERENCIA POR DS N° 217-2021-EF']] 
-    
-    # Generamos fila total
-    total_enc = tabla_encargaturas_resumen[["UNIDAD EJECUTORA", "COSTO", \
-"PROGRAMADO POR MINEDU", "PROGRAMADO POR EL PLIEGO REGIONAL", "TRANSFERENCIA POR DS N° 217-2021-EF"]].sum()
-    
-    # Realizamos append del total en la tabla
-    tabla_encargaturas_resumen = tabla_encargaturas_resumen.append(total_enc, ignore_index=True)
-    
-    #Incluimos palabra "total"
-    tabla_encargaturas_resumen.iloc[-1, tabla_encargaturas_resumen.columns.get_loc('UNIDAD EJECUTORA')] = "Total"
-
-    tabla_encargaturas_resumen = tabla_encargaturas_resumen.round(2)
-
     ###################################
     #  Tablas Asignaciones Temporales #
     ###################################
@@ -738,20 +562,7 @@ for region in lista_regiones:
     costo_at = str('{:,.0f}'.format(tabla2["COSTO"].sum()))
     apm_at = str('{:,.0f}'.format(tabla2["PROGRAMADO POR MINEDU"].sum())) 
     ds_187_at = str('{:,.0f}'.format(tabla2["TRANSFERENCIA POR DS N° 187-2021-EF"].sum())) 
-    ds_187_at_c = tabla2["TRANSFERENCIA POR DS N° 187-2021-EF"].sum()
-    tabla_at_resumen = tabla2.groupby(['UNIDAD EJECUTORA'], as_index=False).sum() 
-    
-    # Generamos fila total
-    total_at = tabla_at_resumen[["UNIDAD EJECUTORA", "COSTO", \
-"PROGRAMADO POR MINEDU", "TRANSFERENCIA POR DS N° 187-2021-EF"]].sum()
-    
-    # Realizamos append del total en la tabla
-    tabla_at_resumen = tabla_at_resumen.append(total_at, ignore_index=True)
-    
-    #Incluimos palabra "total"
-    tabla_at_resumen.iloc[-1, tabla_at_resumen.columns.get_loc('UNIDAD EJECUTORA')] = "Total"
-
-    tabla_at_resumen = tabla_at_resumen.round(2)
+    ds_187_at_c = tabla2["TRANSFERENCIA POR DS N° 187-2021-EF"].sum()    
 
     ###################################
     #    Tablas Beneficios Sociales   #
@@ -766,22 +577,6 @@ for region in lista_regiones:
     ds_72_bs = str('{:,.0f}'.format(tabla3["TRANSFERENCIA POR DS N° 072-2021-EF"].sum())) 
     ds_72_bs_c = tabla3["TRANSFERENCIA POR DS N° 072-2021-EF"].sum()
     ds_256_bs = str('{:,.0f}'.format(tabla3["TRANSFERENCIA POR DS N° 256-2021-EF"].sum()))
-    tabla_bs_resumen = tabla3.groupby(['UNIDAD EJECUTORA'], as_index=False).sum()
-
-    # Generamos fila total
-    total_bs = tabla_bs_resumen[["UNIDAD EJECUTORA", "COSTO", \
-"PROGRAMADO POR MINEDU", "TRANSFERENCIA POR DS N° 072-2021-EF", "TRANSFERENCIA POR DS N° 256-2021-EF"]].sum()
-
-    # Realizamos append del total en la tabla
-    tabla_bs_resumen = tabla_bs_resumen.append(total_bs, ignore_index=True)
-    
-    #Incluimos palabra "total"
-    tabla_bs_resumen.iloc[-1, tabla_bs_resumen.columns.get_loc('UNIDAD EJECUTORA')] = "Total"
-
-    tabla_bs_resumen = tabla_bs_resumen.round(2)
-    
-    lista_bf = str('{:,.0f}'.format(tabla3_2["LISTAS-2021"].sum()))
-    
     
     ########################################
     #    Tablas Financiamiento de Plazas   #
@@ -790,34 +585,7 @@ for region in lista_regiones:
     region_seleccionada = data_creacion['region'] == region #Seleccionar region
     tabla_creacion = data_creacion[region_seleccionada]
     creacion_region = str('{:,.0f}'.format(tabla_creacion["creacion_total"].sum()))
-    creacion_region_c = tabla_creacion["creacion_total"].sum()
-
-    # Generamos fila total
-    total_creacion = tabla_creacion[["region", "inicial", "primaria", "secundaria", "creacion_total"]]. \
-    groupby(by = ["region"], as_index=False).sum()
-    
-    # Realizamos append del total en la tabla
-    tabla_creacion = tabla_creacion.append(total_creacion, ignore_index=True)
-    
-    #Incluimos palabra "total" y "-" en vez de NaN
-    tabla_creacion['ugel'] = tabla_creacion['ugel'].fillna("Total")
-
-    tabla_creacion_formato = data_creacion[region_seleccionada]
-    
-    
-    ########################################
-    #    Tablas Deudas sociales   #
-    ########################################
-
-    #tabla_deuda_social = data_deuda_social
-    #tabla_deuda_social_formato = data_deuda_social
-    
-    #formato_tabla_deuda_social = {
-    #    "seccion_pliego": "{}",
-    #    "monto" : "{:,.0f}",
-    #    }
-    #tabla_deuda_social_formato = tabla_deuda_social_formato.transform({k: v.format for k, v in formato_tabla_deuda_social.items()})        
-    
+        
     ###################################
     #    Suma de variables   #
     ###################################
@@ -834,7 +602,9 @@ for region in lista_regiones:
     # monto_plazas
     # monto_deuda_c
     
-    total_transferido = str('{:,.0f}'.format(np.sum([transferencia_region_2021_c, conceptos_remunerativos_2021_c, monto_deuda_c, monto_region_inversiones_c, transferencia_mascarilla_c, monto_region_kit_c, monto_region_lavamanos_c, monto_transferencia_cdd_2021_c])))
+    #total_transferido = str('{:,.0f}'.format(np.sum([transferencia_region_2021_c, conceptos_remunerativos_2021_c, monto_deuda_c, monto_region_inversiones_c, transferencia_mascarilla_c, monto_region_kit_c, monto_region_lavamanos_c, monto_transferencia_cdd_2021_c])))
+    total_transferido = str('{:,.0f}'.format(np.sum([transferencia_region_2021_c, conceptos_remunerativos_2021_c, monto_deuda_c, transferencia_mascarilla_c, monto_transferencia_cdd_2021_c])))
+
         
     ############################################
     # Tablas de Carátula #
@@ -850,14 +620,14 @@ for region in lista_regiones:
     tabla_1 = (
         ("Intervenciones pedagógicas", transferencia_region_2021),
         ("Conceptos remunerativos", conceptos_remunerativos_2021),
-        ("Deuda social", monto_deuda),
-        ("Inversiones", monto_region_inversiones)
+        ("Deuda social", monto_deuda)
+        #("Inversiones", monto_region_inversiones)
     )
     
     tabla_2 = (
         ("Mascarillas y protectores faciales", transferencia_mascarilla),
-        ("Kit de higiene", monto_region_kit),
-        ("Estaciones de lavado de manos", monto_region_lavamanos)
+        #("Kit de higiene", monto_region_kit),
+        #("Estaciones de lavado de manos", monto_region_lavamanos)
     )
     
     tabla_3 = (
@@ -882,78 +652,25 @@ for region in lista_regiones:
     # Carátula del documento #
     ###########################################################################
 
-    document.add_picture(f"/Users/bran/Documents/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
+    document.add_picture(f"/Users/bran/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
     
-    dt_1 = document.add_paragraph("Financiamientos Generales")
-    dt_1.style = document.styles['Heading 6']
-    
-    dt_1_tabla = document.add_table(rows=1, cols=2)
-    dt_1_tabla.style = "formato_tabla_minedu"
-    hdr_cells = dt_1_tabla.rows[0].cells
-    hdr_cells[0].text = "Concepto"
-    hdr_cells[1].text = "Transferencia"
-    for id, name in tabla_1:
-        row = dt_1_tabla.add_row().cells
-        row[0].text = str(id)
-        row[1].text = str(name)
-    
-    dt_2 = document.add_paragraph("Financiamiento para la reapertura")
-    dt_2.style = document.styles['Heading 6']
-    
-    dt_2_tabla = document.add_table(rows=1, cols=2)
-    dt_2_tabla.style = "formato_tabla_minedu"
-    hdr_cells = dt_2_tabla.rows[0].cells
-    hdr_cells[0].text = "Concepto"
-    hdr_cells[1].text = "Transferencia"
-    for id, name in tabla_2:
-        row = dt_2_tabla.add_row().cells
-        row[0].text = str(id)
-        row[1].text = str(name)
-
-    
-    dt_3 = document.add_paragraph("Transferencia de Compromisos de desempeño")
-    dt_3.style = document.styles['Heading 6']
-    
-    dt_3_tabla = document.add_table(rows=1, cols=2)
-    dt_3_tabla.style = "formato_tabla_minedu"
-    hdr_cells = dt_3_tabla.rows[0].cells
-    hdr_cells[0].text = "Concepto"
-    hdr_cells[1].text = "Transferencia"
-    for id, name in tabla_3:
-        row = dt_3_tabla.add_row().cells
-        row[0].text = str(id)
-        row[1].text = str(name)
-    
-    
-    dt_4_tabla = document.add_table(rows=1, cols=2)
-    dt_4_tabla.style = "formato_tabla_minedu"
-    hdr_cells = dt_4_tabla.rows[0].cells
-    for id, name in tabla_4:
-        row = dt_4_tabla.add_row().cells
-        row[0].text = str(id)
-        row[1].text = str(name)
-    
+    # --- add a 2 x 2 table as an example ---
+    table = document.add_table(rows=2, cols=2)
+    # --- get the first cell of the first row ---
+    cell = table.rows[0].cells[0]
+    # --- by default a cell has one paragraph with zero runs ---
+    paragraph = cell.paragraphs[0]
+    # --- add a run in which to place the picture ---
+    run2 = paragraph.add_run()
+    # --- add the picture to that run ---
+    run2.add_picture(f"/Users/bran/GitHub/AM-python-docx/input/maps/{region}.PNG", width=Inches(2.7))
+        
     #####################################################
     # Incluimos sección 1 de intervenciones pedagógicas #
     #####################################################
     
     document.add_heading("Intervenciones pedagógicas", level=2) # 1) Intervenciones pedagógicas  
     document.add_heading("Corte: 28/11/2021", level=3)
-#    interv_parrafo1 = document.add_paragraph("Al año 2020, la región ")
-#    interv_parrafo1.style = document.styles['Heading 5']
-#    interv_parrafo1.add_run(region)
-#    interv_parrafo1.add_run(" inicio con un PIA de ")
-#    interv_parrafo1.add_run(monto_pia_2020)
-#    interv_parrafo1.add_run(". Al finalizar el año contaron con un  ")
-#    interv_parrafo1.add_run(monto_pim_2020)
-#    interv_parrafo1.add_run(" de los cuales se ejecutaron ")
-#    interv_parrafo1.add_run(monto_devengado_2020)
-#    interv_parrafo1.add_run(" lo cual corresponde a ")
-#    interv_parrafo1.add_run(avance_2020)
-#    interv_parrafo1.add_run(" del PIM. En el transcurso del 2020, se realizó una transferencia de partidas, por un monto de ")
-#    interv_parrafo1.add_run(monto_transferido_2020)
-#    interv_parrafo1.paragraph_format.alignment = docx.enum.text.WD_ALIGN_PARAGRAPH.JUSTIFY
-
     
     interv_parrafo2 = document.add_paragraph("Al año 2021, el pliego de la región ")
     interv_parrafo2.style = document.styles['Heading 5']
@@ -1006,28 +723,28 @@ for region in lista_regiones:
     # Incluimos sección 4 de kit de higiene #
     #####################################################
     
-    document.add_heading("Kit de higiene y estaciones de lavado de manos", level=2)
+    #document.add_heading("Kit de higiene y estaciones de lavado de manos", level=2)
     
-    kit_parrafo1 = document.add_paragraph("Con respecto al kit de higiene y al lavamanos, se transfirió S/ ")
-    kit_parrafo1.style = document.styles['Heading 5']
-    kit_parrafo1.add_run(monto_region_kit)
-    kit_parrafo1.add_run(" y S/ ")
-    kit_parrafo1.add_run(monto_region_lavamanos)
-    kit_parrafo1.add_run(" respectivamente. Estos han sido otorgados a las cuentas de los directores de las instituciones educativas en el marco del artículo 42 de la Ley 31084 y el artículo 2 del DU N° 021-2021. De ello, los directores han declarado la ejecución de S/ ")
-    kit_parrafo1.add_run(avance_kit)
-    kit_parrafo1.add_run(" y S/ ")
-    kit_parrafo1.add_run(avance_lavamanos)
+    #kit_parrafo1 = document.add_paragraph("Con respecto al kit de higiene y al lavamanos, se transfirió S/ ")
+    #kit_parrafo1.style = document.styles['Heading 5']
+    #kit_parrafo1.add_run(monto_region_kit)
+    #kit_parrafo1.add_run(" y S/ ")
+    #kit_parrafo1.add_run(monto_region_lavamanos)
+    #kit_parrafo1.add_run(" respectivamente. Estos han sido otorgados a las cuentas de los directores de las instituciones educativas en el marco del artículo 42 de la Ley 31084 y el artículo 2 del DU N° 021-2021. De ello, los directores han declarado la ejecución de S/ ")
+    #kit_parrafo1.add_run(avance_kit)
+    #kit_parrafo1.add_run(" y S/ ")
+    #kit_parrafo1.add_run(avance_lavamanos)
     
     #####################################################
     # Incluimos sección 5 de inversiones #
     #####################################################
 
-    document.add_heading("Inversiones", level=2)
+    #document.add_heading("Inversiones", level=2)
     
-    inversiones_parrafo1 = document.add_paragraph("")
-    inversiones_parrafo1.style = document.styles['Heading 5']
-    inversiones_parrafo1.add_run(fila1)
-    inversiones_parrafo1.add_run(fila2)
+    #inversiones_parrafo1 = document.add_paragraph("")
+    #inversiones_parrafo1.style = document.styles['Heading 5']
+    #inversiones_parrafo1.add_run(fila1)
+    #inversiones_parrafo1.add_run(fila2)
     
     #####################################################
     # Incluimos sección 5 de pago de encargaturas #
@@ -1145,7 +862,6 @@ en el nivel institucional mediante los decretos supremos correspondientes. ')
     #######################
     # Guardamos documento #
     #######################
-    
     document.save(nueva_carpeta / f'AM_{region}_{fecha_actual}.docx')
     
 ###########################################################
